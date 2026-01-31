@@ -73,6 +73,7 @@ export default function Sidebar() {
 
       {/* Main Navigation */}
       <div className="flex-1 min-h-0 py-2">
+        {/* Navigation items */}
         <nav className="space-y-0.5 px-2">
           {mainNavItems.map((item) => {
             const isActive = pathname === item.href;
