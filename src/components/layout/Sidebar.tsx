@@ -23,11 +23,11 @@ export default function Sidebar() {
     { name: 'Dashboard', icon: Sparkles, href: '/dashboard' },
     { name: 'Custom Prompt', icon: Wand2, href: '/custom-prompt' },
     { name: 'UGC Photo', icon: Image, href: '/ugc-photo' },
-    { name: 'UGC Video', icon: Video, href: '/ugc-video', badge: 'Bientôt' },
+    { name: 'UGC Video', icon: Video, href: '/ugc-video', badge: 'Bientot' },
     { name: 'Premium UGC', icon: Sparkles, href: '/premium-ugc' },
     { name: 'Landing Page', icon: Layers, href: '/landing-page' },
     { name: 'Ad Creative', icon: Megaphone, href: '/ad-creative' },
-    { name: 'Voice Generation', icon: Mic, href: '/voice', badge: 'Bientôt' },
+    { name: 'Voice Generation', icon: Mic, href: '/voice', badge: 'Bientot' },
     { name: 'Product Showcase', icon: ShoppingBag, href: '/product-showcase' },
     { name: 'Virtual Try-On', icon: Shirt, href: '/virtual-tryon' },
     { name: 'POD', icon: Package, href: '/pod' },
@@ -35,7 +35,7 @@ export default function Sidebar() {
     { name: 'Prompt Generator', icon: Wand2, href: '/prompt-generator' },
   ];
 
-  const bottomNavItems = [
+  const bottomNavItems: NavItem[] = [
     { name: 'Mes Produits', icon: Package, href: '/products' },
     { name: 'Historique', icon: BarChart, href: '/history' },
     { name: 'Crédits', icon: CreditCard, href: '/credits' },
@@ -61,7 +61,7 @@ export default function Sidebar() {
       {/* Main Navigation */}
       <div className="flex-1 min-h-0 py-2">
         <nav className="space-y-0.5 px-2">
-          {mainNavItems.map((item) => {
+          {mainNavItems.map((item: NavItem) => {
             const isActive = pathname === item.href || item.active;
             const Icon = item.icon;
             return (
