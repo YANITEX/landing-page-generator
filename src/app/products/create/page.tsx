@@ -122,7 +122,7 @@ export default function CreateProductPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/generate-headline-gemini', {
+      const res = await fetch('/api/ai/generate-headline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -148,7 +148,7 @@ export default function CreateProductPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/generate-benefits-gemini', {
+      const res = await fetch('/api/ai/generate-benefits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -197,7 +197,7 @@ export default function CreateProductPage() {
     }
     setGeneratingAdCopies(true);
     try {
-      const res = await fetch('/api/generate-ad-copies', {
+      const res = await fetch('/api/ai/generate-ad-copies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
