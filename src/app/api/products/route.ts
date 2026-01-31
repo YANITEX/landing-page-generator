@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         whatsapp: whatsapp || null,
         deliveryInfo: deliveryInfo || null,
-        benefits: benefits || null,
-        adCopies: (Array.isArray(adCopies) && adCopies.length > 0) ? adCopies : null,
+        benefits: benefits || undefined,
+        adCopies: (Array.isArray(adCopies) && adCopies.length > 0) ? adCopies : undefined,
         images: {
           create: images.map((url: string, index: number) => ({
             url,
