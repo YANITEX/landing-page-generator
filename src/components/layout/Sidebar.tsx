@@ -8,10 +8,18 @@ import {
   DollarSign, Settings, User, ChevronDown 
 } from 'lucide-react';
 
+interface NavItem {
+  name: string;
+  icon: any;
+  href: string;
+  badge?: string;
+  active?: boolean;
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const mainNavItems = [
+  const mainNavItems: NavItem[] = [
     { name: 'Dashboard', icon: Sparkles, href: '/dashboard' },
     { name: 'Custom Prompt', icon: Wand2, href: '/custom-prompt' },
     { name: 'UGC Photo', icon: Image, href: '/ugc-photo' },
