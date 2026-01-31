@@ -2,18 +2,31 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Wand2, Image, Video, Sparkles, Layers, Zap, Megaphone, 
-  Mic, ShoppingBag, Shirt, Package, BarChart, CreditCard, 
-  DollarSign, Settings, User, ChevronDown 
+import {
+  Wand2,
+  Image,
+  Video,
+  Sparkles,
+  Layers,
+  Megaphone,
+  Mic,
+  ShoppingBag,
+  Shirt,
+  Package,
+  BarChart,
+  CreditCard,
+  DollarSign,
+  Settings,
+  User,
+  ChevronDown,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   name: string;
-  icon: any;
+  icon: LucideIcon;
   href: string;
   badge?: string;
-  active?: boolean;
 }
 
 export default function Sidebar() {
@@ -61,9 +74,10 @@ export default function Sidebar() {
       {/* Main Navigation */}
       <div className="flex-1 min-h-0 py-2">
         <nav className="space-y-0.5 px-2">
-          {mainNavItems.map((item: NavItem) => {
-            const isActive = pathname === item.href || item.active;
+          {mainNavItems.map((item) => {
+            const isActive = pathname === item.href;
             const Icon = item.icon;
+
             return (
               <Link
                 key={item.name}
@@ -74,7 +88,13 @@ export default function Sidebar() {
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-emerald-400' : 'text-gray-500 group-hover:text-gray-300'}`} />
+                <Icon
+                  className={`w-4 h-4 flex-shrink-0 ${
+                    isActive
+                      ? 'text-emerald-400'
+                      : 'text-gray-500 group-hover:text-gray-300'
+                  }`}
+                />
                 <span className="flex-1">{item.name}</span>
                 {item.badge && (
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
@@ -93,6 +113,7 @@ export default function Sidebar() {
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
+
             return (
               <Link
                 key={item.name}
@@ -103,7 +124,13 @@ export default function Sidebar() {
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`} />
+                <Icon
+                  className={`w-4 h-4 flex-shrink-0 ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-gray-500 group-hover:text-gray-300'
+                  }`}
+                />
                 <span>{item.name}</span>
               </Link>
             );
