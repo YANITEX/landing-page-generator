@@ -8,8 +8,19 @@ import {
   Mic, ShoppingBag, Shirt, Package, BarChart, ArrowRight, TrendingUp 
 } from 'lucide-react';
 
+interface Tool {
+  name: string;
+  icon: any;
+  description: string;
+  color: string;
+  href: string;
+  available: boolean;
+  badge?: string;
+  featured?: boolean;
+}
+
 export default function DashboardPage() {
-  const tools = [
+  const tools: Tool[] = [
     {
       name: 'Custom Prompt',
       icon: Wand2,
