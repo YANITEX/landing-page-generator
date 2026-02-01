@@ -88,7 +88,38 @@ export async function POST(request: NextRequest) {
         whatsapp: whatsapp || null,
         deliveryInfo: deliveryInfo || null,
         benefits: benefits || undefined,
-        adCopies: (Array.isArray(adCopies) && adCopies.length > 0) ? adCopies : undefined,
+        // adCopies supprimé du modèle Product, on gère via Personas
+        personas: {
+          create: body.persona ? {
+             name: body.persona.name || "Persona Principal",
+             description: body.persona.description,
+             marketingAngles: {
+               create: body.persona.marketingAngles?.map((angle: any) => ({
+                 name: angle.name,
+                 description: angle.description,
+                 adCopies: {
+                   create: angle.adCopies?.map((copy: any) => ({
+                     text: copy.text || copy, // Gérer format objet ou string simple
+                     cta: copy.cta,
+                     platform: copy.platform
+                   }))
+                 }
+               }))
+             }
+          } : (Array.isArray(adCopies) && adCopies.length > 0) ? {
+             // Fallback pour compatibilité frontend existant: On crée un Persona par défaut
+             name: "Audience Générale",
+             description: "Persona généré automatiquement",
+             marketingAngles: {
+               create: {
+                 name: "Angle Général",
+                 adCopies: {
+                   create: adCopies.map((text: string) => ({ text }))
+                 }
+               }
+             }
+          } : undefined
+        },
         images: {
           create: images.map((url: string, index: number) => ({
             url,

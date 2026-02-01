@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Upload, Image as ImageIcon, Trash2, ChevronLeft, ChevronRight, AlertCircle, Sparkles, Loader } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, ChevronLeft, ChevronRight, AlertCircle, Sparkles, Loader, Plus, Target, X } from 'lucide-react';
 
 interface UploadedImage {
   file?: File;
   preview: string;
-  isExisting?: boolean; // Pour distinguer les images existantes des nouvelles
+  isExisting?: boolean;
 }
 
 interface FormData {
@@ -23,7 +23,8 @@ interface FormData {
   phone: string;
   whatsapp: string;
   deliveryInfo: string;
-  adCopies: string[];
+  adCopies: string[]; // Keep for legacy compatibility
+  personas?: any[]; // New structured data
   language?: string;
 }
 
@@ -95,6 +96,7 @@ export default function EditProductPage() {
           whatsapp: product.whatsapp || '',
           deliveryInfo: product.deliveryInfo || '',
           adCopies: (product.adCopies && Array.isArray(product.adCopies)) ? product.adCopies : [],
+          personas: (product.personas && Array.isArray(product.personas)) ? product.personas : [],
           images: existingImages,
         }));
 
@@ -259,7 +261,8 @@ export default function EditProductPage() {
           headline: data.headline || prev.headline,
           description: data.description || prev.description,
           benefits: Array.isArray(data.benefits) ? data.benefits : prev.benefits,
-          adCopies: Array.isArray(data.adCopies) ? data.adCopies : prev.adCopies,
+          adCopies: [], // Clear legacy
+          personas: data.persona ? [data.persona] : prev.personas
         }));
       } else {
         setError(data.error || 'Erreur lors de la génération');
@@ -344,6 +347,7 @@ export default function EditProductPage() {
           deliveryInfo: formData.deliveryInfo,
           benefits: formData.benefits,
           adCopies: formData.adCopies.length > 0 ? formData.adCopies : undefined,
+          personas: formData.personas && formData.personas.length > 0 ? formData.personas : undefined,
           images: imageUrls.length > 0 ? imageUrls : undefined,
         }),
       });
@@ -720,67 +724,206 @@ export default function EditProductPage() {
           </div>
         )}
 
-        {/* Step 5: Ad Copies */}
+        {/* Step 5: Ad Copies & Strategy */}
         {step === 5 && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-white">Ad Copies (Publicités)</h3>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Target className="text-emerald-400" size={24} />
+                Stratégie & Publicités
+              </h3>
               <button
-                onClick={handleGenerateAdCopies}
-                disabled={generatingAdCopies || !formData.productName}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:shadow-lg hover:shadow-purple-500/40 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                onClick={() => setFormData(prev => ({
+                   ...prev, 
+                   personas: [...(prev.personas || []), { 
+                      name: 'Nouveau Persona', 
+                      description: '', 
+                      marketingAngles: [{ name: 'Nouvel Angle', adCopies: [{ text: '' }] }] 
+                   }]
+                }))}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors text-sm font-medium"
               >
-                {generatingAdCopies ? (
-                  <>
-                    <Loader size={16} className="animate-spin" />
-                    Génération...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={16} />
-                    Générer par AI
-                  </>
-                )}
+                <Plus size={16} /> Ajouter un Persona
               </button>
             </div>
 
-            {formData.adCopies.map((copy, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex justify-between items-start">
-                  <label className="block text-sm font-medium text-gray-300">
-                    Ad Copy {idx + 1}
-                  </label>
-                  <button
-                    onClick={() => handleRemoveAdCopy(idx)}
-                    className="text-red-400 hover:text-red-300 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                <textarea
-                  value={copy}
-                  onChange={(e) => handleUpdateAdCopy(idx, e.target.value)}
-                  maxLength={150}
-                  rows={2}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none resize-none"
-                  placeholder="Écrivez votre ad copy..."
-                />
-                <p className="text-xs text-gray-500">{copy.length}/150</p>
-              </div>
-            ))}
+            {/* Structured Personas */}
+            {formData.personas && formData.personas.length > 0 ? (
+              <div className="space-y-8">
+                {formData.personas.map((persona, pIdx) => (
+                  <div key={pIdx} className="bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden">
+                    {/* Persona Header */}
+                    <div className="p-4 bg-gray-900/50 border-b border-gray-700/50 flex items-start gap-4">
+                       <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-1">
+                          <span className="text-emerald-500 font-bold">{pIdx + 1}</span>
+                       </div>
+                       <div className="flex-1 space-y-3">
+                          <div className="flex justify-between items-start">
+                             <div className="flex-1 mr-4">
+                                <label className="text-xs font-semibold text-gray-500 uppercase">Nom du Persona</label>
+                                <input 
+                                  type="text" 
+                                  value={persona.name} 
+                                  onChange={(e) => {
+                                     const newPersonas = [...formData.personas!];
+                                     newPersonas[pIdx] = { ...newPersonas[pIdx], name: e.target.value };
+                                     setFormData(prev => ({ ...prev, personas: newPersonas }));
+                                  }}
+                                  className="w-full bg-transparent border-none text-lg font-bold text-white focus:ring-0 p-0"
+                                />
+                             </div>
+                             <button 
+                               onClick={() => {
+                                  if(confirm('Supprimer ce persona ?')) {
+                                     setFormData(prev => ({ ...prev, personas: prev.personas!.filter((_, i) => i !== pIdx) }));
+                                  }
+                               }}
+                               className="text-gray-500 hover:text-red-400 p-1"
+                             >
+                               <Trash2 size={16} />
+                             </button>
+                          </div>
+                          <div>
+                             <label className="text-xs font-semibold text-gray-500 uppercase">Description</label>
+                             <textarea 
+                               value={persona.description} 
+                               onChange={(e) => {
+                                  const newPersonas = [...formData.personas!];
+                                  newPersonas[pIdx] = { ...newPersonas[pIdx], description: e.target.value };
+                                  setFormData(prev => ({ ...prev, personas: newPersonas }));
+                               }}
+                               className="w-full bg-transparent border border-gray-700 rounded p-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none resize-none"
+                               rows={2}
+                             />
+                          </div>
+                       </div>
+                    </div>
 
-            {formData.adCopies.length < 5 && (
-              <button
-                onClick={() =>
-                  setFormData(prev => ({
-                    ...prev,
-                    adCopies: [...prev.adCopies, ''],
-                  }))
-                }
-                className="w-full py-2 px-4 border-2 border-dashed border-gray-600 text-gray-400 hover:border-emerald-500 hover:text-emerald-400 rounded-lg transition-colors text-sm font-medium"
-              >
-                + Ajouter une ad copy
-              </button>
+                    {/* Marketing Angles */}
+                    <div className="p-4 space-y-6">
+                       {persona.marketingAngles?.map((angle: any, aIdx: number) => (
+                         <div key={aIdx} className="pl-4 border-l-2 border-gray-700 relative group/angle">
+                            <button 
+                               onClick={() => {
+                                  if(confirm('Supprimer cet angle ?')) {
+                                     const newPersonas = [...formData.personas!];
+                                     newPersonas[pIdx].marketingAngles = newPersonas[pIdx].marketingAngles.filter((_: any, i: number) => i !== aIdx);
+                                     setFormData(prev => ({ ...prev, personas: newPersonas }));
+                                  }
+                               }}
+                               className="absolute -left-8 top-0 p-1.5 text-red-500/50 hover:text-red-500 opacity-0 group-hover/angle:opacity-100 transition-opacity"
+                            >
+                               <Trash2 size={14} />
+                            </button>
+
+                            <div className="mb-3">
+                               <input 
+                                 type="text" 
+                                 value={angle.name} 
+                                 onChange={(e) => {
+                                    const newPersonas = [...formData.personas!];
+                                    newPersonas[pIdx].marketingAngles[aIdx].name = e.target.value;
+                                    setFormData(prev => ({ ...prev, personas: newPersonas }));
+                                 }}
+                                 className="w-full bg-transparent border-none text-base font-semibold text-emerald-400 focus:ring-0 p-0"
+                                 placeholder="Nom de l'angle..."
+                               />
+                            </div>
+
+                            <div className="space-y-3">
+                               {angle.adCopies?.map((copy: any, cIdx: number) => (
+                                 <div key={cIdx} className="bg-gray-900/50 p-3 rounded-lg border border-gray-800 relative group/copy">
+                                    <button 
+                                       onClick={() => {
+                                          const newPersonas = [...formData.personas!];
+                                          newPersonas[pIdx].marketingAngles[aIdx].adCopies = 
+                                             newPersonas[pIdx].marketingAngles[aIdx].adCopies.filter((_: any, i: number) => i !== cIdx);
+                                          setFormData(prev => ({ ...prev, personas: newPersonas }));
+                                       }}
+                                       className="absolute top-2 right-2 text-gray-600 hover:text-red-400 opacity-0 group-hover/copy:opacity-100"
+                                    >
+                                       <X size={14} />
+                                    </button>
+                                    <textarea
+                                       value={typeof copy === 'string' ? copy : copy.text}
+                                       onChange={(e) => {
+                                          const newPersonas = [...formData.personas!];
+                                          const currentCopy = newPersonas[pIdx].marketingAngles[aIdx].adCopies[cIdx];
+                                          if (typeof currentCopy === 'string') {
+                                             newPersonas[pIdx].marketingAngles[aIdx].adCopies[cIdx] = e.target.value;
+                                          } else {
+                                             currentCopy.text = e.target.value;
+                                          }
+                                          setFormData(prev => ({ ...prev, personas: newPersonas }));
+                                       }}
+                                       rows={2}
+                                       className="w-full bg-transparent border-none text-gray-300 text-sm focus:ring-0 p-0 resize-none"
+                                       placeholder="Texte de l'ad copy..."
+                                    />
+                                 </div>
+                               ))}
+                               <button 
+                                 onClick={() => {
+                                    const newPersonas = [...formData.personas!];
+                                    if(!newPersonas[pIdx].marketingAngles[aIdx].adCopies) newPersonas[pIdx].marketingAngles[aIdx].adCopies = [];
+                                    newPersonas[pIdx].marketingAngles[aIdx].adCopies.push({ text: '' });
+                                    setFormData(prev => ({ ...prev, personas: newPersonas }));
+                                 }}
+                                 className="text-xs flex items-center gap-1 text-gray-500 hover:text-emerald-400 py-1"
+                               >
+                                 <Plus size={12} /> Ajouter Variante
+                               </button>
+                            </div>
+                         </div>
+                       ))}
+                       <button 
+                         onClick={() => {
+                            const newPersonas = [...formData.personas!];
+                            if(!newPersonas[pIdx].marketingAngles) newPersonas[pIdx].marketingAngles = [];
+                            newPersonas[pIdx].marketingAngles.push({ name: 'Nouvel Angle', adCopies: [{ text: '' }] });
+                            setFormData(prev => ({ ...prev, personas: newPersonas }));
+                         }}
+                         className="w-full py-2 border border-dashed border-gray-700 text-gray-500 hover:text-emerald-400 hover:border-emerald-500/30 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                       >
+                         <Plus size={14} /> Ajouter un Angle Marketing
+                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+               /* Legacy Fallback or Empty State */
+               <div className="space-y-4">
+                  <div className="p-8 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-center">
+                     <Target className="text-gray-600 mb-2" size={32} />
+                     <p className="text-gray-400 mb-4">Aucune stratégie marketing définie.</p>
+                     <button
+                        onClick={() => setFormData(prev => ({
+                           ...prev, 
+                           personas: [{ 
+                              name: 'Nouveau Persona', 
+                              description: '', 
+                              marketingAngles: [{ name: 'Angle Principal', adCopies: [{ text: '' }] }] 
+                           }]
+                        }))}
+                        className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors"
+                     >
+                        Créer une stratégie
+                     </button>
+                  </div>
+                  
+                  {/* Legacy Ad Copies if any exist */}
+                  {formData.adCopies.length > 0 && (
+                     <div className="opacity-75 mt-8 pt-8 border-t border-gray-800">
+                        <h4 className="text-sm uppercase text-gray-500 mb-4">Anciennes Ad Copies (Obsolètes)</h4>
+                        {formData.adCopies.map((copy, idx) => (
+                           <div key={idx} className="mb-2 p-3 bg-gray-900/50 rounded text-gray-400 text-sm">
+                              {copy}
+                           </div>
+                        ))}
+                     </div>
+                  )}
+               </div>
             )}
           </div>
         )}

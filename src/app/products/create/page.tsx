@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import TopNav from '@/components/layout/TopNav';
-import { ChevronRight, Plus, X, Sparkles, Loader, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ChevronRight, Plus, X, Sparkles, Loader, Upload, Image as ImageIcon, Trash2, Target } from 'lucide-react';
 
 interface Benefit {
   title: string;
@@ -30,6 +30,7 @@ interface FormData {
   deliveryInfo: string;
   adCopies: string[];
   language: string;
+  persona?: any; // New field for storing structured persona from AI
 }
 
 const currencies = ['DA', 'EUR', 'USD', 'MAD', 'TND'];
@@ -279,6 +280,7 @@ export default function CreateProductPage() {
           description: data.description || prev.description,
           benefits: Array.isArray(data.benefits) ? data.benefits : prev.benefits,
           adCopies: Array.isArray(data.adCopies) ? data.adCopies : prev.adCopies,
+          persona: data.persona || undefined, // Store the structured persona
         }));
       } else {
         alert(data.error || 'Erreur lors de la génération');
@@ -343,6 +345,7 @@ export default function CreateProductPage() {
           deliveryInfo: formData.deliveryInfo,
           benefits: formData.benefits,
           adCopies: formData.adCopies.length > 0 ? formData.adCopies : undefined,
+          persona: formData.persona, // Send the structured persona to backend
         }),
       });
 
@@ -825,70 +828,222 @@ export default function CreateProductPage() {
             </div>
           )}
 
-          {/* Step 5: Ad Copies */}
+          {/* Step 5: Strategy & Personas */}
           {step === 5 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white">Ad Copies (Publicités)</h2>
-              <p className="text-gray-400">Ajoutez entre 1 et 5 ad copies pour votre campagne (optionnel)</p>
+              <h2 className="text-2xl font-bold text-white">Stratégie Marketing</h2>
+              <p className="text-gray-400">Révisez le persona, les angles marketing et les ad copies générés par l'IA.</p>
 
-              <button
-                onClick={handleGenerateAdCopies}
-                disabled={generatingAdCopies || !formData.productName}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:shadow-lg hover:shadow-purple-500/40 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {generatingAdCopies ? (
-                  <>
-                    <Loader className="w-5 h-5 animate-spin" />
-                    Génération en cours...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    Générer par AI
-                  </>
-                )}
-              </button>
-
-              <div className="space-y-4">
-                {formData.adCopies.map((copy, idx) => (
-                  <div key={idx} className="relative">
-                    <div className="flex justify-between items-start mb-2">
-                      <label className="block text-sm font-medium text-gray-300">
-                        Ad Copy {idx + 1}
-                      </label>
-                      <button
-                        onClick={() => handleRemoveAdCopy(idx)}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <textarea
-                      value={copy}
-                      onChange={(e) => handleUpdateAdCopy(idx, e.target.value)}
-                      maxLength={150}
-                      rows={2}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 transition-colors resize-none"
-                      placeholder="Écrivez votre ad copy..."
-                    />
-                    <p className="text-xs text-gray-500 mt-1">{copy.length}/150</p>
-                  </div>
-                ))}
-
-                {formData.adCopies.length < 5 && (
-                  <button
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        adCopies: [...formData.adCopies, ''],
-                      })
-                    }
-                    className="w-full py-2 px-4 border-2 border-dashed border-gray-600 text-gray-400 hover:border-emerald-500 hover:text-emerald-400 rounded-lg transition-colors text-sm font-medium"
+              {!formData.persona && formData.adCopies.length === 0 && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-center">
+                   <p className="text-yellow-400 mb-4">Aucune stratégie générée pour le moment.</p>
+                   <button
+                    onClick={handleGenerateAdCopies} // Fallback to old generation if really needed, or encourage full generation
+                    disabled={generatingAdCopies || !formData.productName}
+                    className="flex items-center justify-center gap-2 px-6 py-2 mx-auto bg-gradient-to-r from-purple-500 to-pink-600 hover:shadow-lg text-white rounded-lg font-medium transition-all"
                   >
-                    + Ajouter une ad copy
+                    {generatingAdCopies ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    Générer une stratégie de base
                   </button>
-                )}
-              </div>
+                </div>
+              )}
+
+
+              {/* Persona Display & Editing */}
+              {formData.persona ? (
+                <div className="bg-gray-800/40 border border-emerald-500/30 rounded-xl p-6">
+                  {/* Persona Header Editable */}
+                  <div className="flex items-start gap-4 mb-6 p-4 bg-gray-900/50 rounded-lg">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                       <Target className="text-emerald-500" size={24} />
+                    </div>
+                    <div className="w-full space-y-3">
+                       <div>
+                         <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nom du Persona</label>
+                         <input 
+                           type="text" 
+                           value={formData.persona.name} 
+                           onChange={(e) => setFormData(prev => ({ ...prev, persona: { ...prev.persona, name: e.target.value } }))}
+                           className="w-full bg-transparent border-b border-gray-700 focus:border-emerald-500 text-xl font-bold text-white focus:outline-none pb-1"
+                           placeholder="Ex: Maman occupée"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Description</label>
+                         <textarea 
+                           value={formData.persona.description} 
+                           onChange={(e) => setFormData(prev => ({ ...prev, persona: { ...prev.persona, description: e.target.value } }))}
+                           className="w-full bg-transparent border border-gray-700 rounded p-2 text-sm text-gray-300 focus:border-emerald-500 focus:outline-none resize-none"
+                           rows={2}
+                           placeholder="Description des douleurs et désirs du persona..."
+                         />
+                       </div>
+                       <div className="flex justify-end">
+                          <button 
+                            onClick={() => {
+                               if (confirm('Voulez-vous vraiment supprimer ce persona et recommencer ?')) {
+                                  setFormData(prev => ({ ...prev, persona: undefined, adCopies: [] }));
+                               }
+                            }}
+                            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                          >
+                            <Trash2 size={12} /> Supprimer la stratégie
+                          </button>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {formData.persona.marketingAngles?.map((angle: any, aIdx: number) => (
+                      <div key={aIdx} className="pl-6 border-l-2 border-gray-700 relative group/angle">
+                         {/* Remove Angle Button */}
+                         <button 
+                           onClick={() => {
+                              const newAngles = formData.persona.marketingAngles.filter((_: any, i: number) => i !== aIdx);
+                              setFormData(prev => ({ ...prev, persona: { ...prev.persona, marketingAngles: newAngles } }));
+                           }}
+                           className="absolute -left-9 top-0 p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors opacity-0 group-hover/angle:opacity-100"
+                           title="Supprimer cet angle"
+                         >
+                           <Trash2 size={12} />
+                         </button>
+
+                        <div className="mb-3">
+                           <input 
+                             type="text" 
+                             value={angle.name} 
+                             onChange={(e) => {
+                                const newAngles = [...formData.persona.marketingAngles];
+                                newAngles[aIdx] = { ...newAngles[aIdx], name: e.target.value };
+                                setFormData(prev => ({ ...prev, persona: { ...prev.persona, marketingAngles: newAngles } }));
+                             }}
+                             className="w-full bg-transparent border-none text-lg font-semibold text-emerald-400 focus:ring-0 p-0 placeholder-emerald-400/50"
+                             placeholder="Nom de l'angle marketing..."
+                           />
+                        </div>
+
+                        <div className="space-y-3">
+                           {angle.adCopies?.map((copy: any, cIdx: number) => (
+                             <div key={cIdx} className="bg-gray-900/50 p-4 rounded-lg border border-gray-800 relative group/copy">
+                               <button 
+                                 onClick={() => {
+                                    const newAngles = [...formData.persona.marketingAngles];
+                                    newAngles[aIdx].adCopies = newAngles[aIdx].adCopies.filter((_: any, i: number) => i !== cIdx);
+                                    setFormData(prev => ({ ...prev, persona: { ...prev.persona, marketingAngles: newAngles } }));
+                                 }}
+                                 className="absolute top-2 right-2 p-1 text-gray-600 hover:text-red-400 opacity-0 group-hover/copy:opacity-100 transition-opacity"
+                               >
+                                 <X size={14} />
+                               </button>
+                               <textarea
+                                 value={typeof copy === 'string' ? copy : copy.text}
+                                 onChange={(e) => {
+                                    const newAngles = [...formData.persona.marketingAngles];
+                                    const newVal = typeof copy === 'string' ? e.target.value : { ...copy, text: e.target.value };
+                                    newAngles[aIdx].adCopies[cIdx] = newVal;
+                                    setFormData(prev => ({ ...prev, persona: { ...prev.persona, marketingAngles: newAngles } }));
+                                 }}
+                                 rows={3}
+                                 className="w-full bg-transparent border-none text-gray-300 text-sm focus:ring-0 p-0 resize-none whitespace-pre-line"
+                                 placeholder="Texte de l'ad copy..."
+                               />
+                             </div>
+                           ))}
+                           
+                           <button 
+                             onClick={() => {
+                                const newAngles = [...formData.persona.marketingAngles];
+                                if (!newAngles[aIdx].adCopies) newAngles[aIdx].adCopies = [];
+                                newAngles[aIdx].adCopies.push({ text: '' });
+                                setFormData(prev => ({ ...prev, persona: { ...prev.persona, marketingAngles: newAngles } }));
+                             }}
+                             className="text-xs flex items-center gap-1 text-gray-500 hover:text-emerald-400 transition-colors py-1"
+                           >
+                             <Plus size={12} /> Ajouter une variante d'Ad Copy
+                           </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button 
+                       onClick={() => {
+                          const newAngles = formData.persona.marketingAngles ? [...formData.persona.marketingAngles] : [];
+                          newAngles.push({ name: 'Nouvel Angle Marketing', adCopies: [{ text: '' }] });
+                          setFormData(prev => ({ ...prev, persona: { ...prev.persona, marketingAngles: newAngles } }));
+                       }}
+                       className="w-full py-3 border border-dashed border-gray-700 hover:border-emerald-500/50 rounded-xl text-gray-400 hover:text-emerald-400 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Plus size={16} /> Ajouter un Angle Marketing
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => setFormData(prev => ({
+                        ...prev, 
+                        persona: { 
+                          name: 'Nouveau Persona', 
+                          description: '', 
+                          marketingAngles: [
+                            { name: 'Angle Principal', adCopies: [{ text: '' }] }
+                          ] 
+                        },
+                        adCopies: [] // Clear legacy if switching to persona
+                      }))
+                    }
+                    className="w-full py-4 border-2 border-dashed border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/5 rounded-xl text-emerald-400 transition-all flex flex-col items-center justify-center gap-2 group"
+                  >
+                    <div className="p-3 bg-emerald-500/10 rounded-full group-hover:scale-110 transition-transform">
+                      <Plus size={24} />
+                    </div>
+                    <span className="font-medium">Créer une stratégie manuellement</span>
+                    <span className="text-xs text-emerald-500/60">Ajouter un persona, des angles et des publicités</span>
+                  </button>
+                  
+                  {formData.adCopies.length > 0 && (
+                     <div className="relative py-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-gray-800" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-[#0a1520] px-2 text-gray-500">Ou utiliser le mode simple</span>
+                        </div>
+                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Legacy Ad Copies Display (Fallback) */}
+              {!formData.persona && formData.adCopies.length > 0 && (
+                 <div className="space-y-4 opacity-75">
+                    <h3 className="text-lg font-semibold text-white">Ad Copies (Standard)</h3>
+                    {formData.adCopies.map((copy, idx) => (
+                      <div key={idx} className="relative">
+                        <div className="flex justify-between items-start mb-2">
+                          <label className="block text-sm font-medium text-gray-300">
+                            Ad Copy {idx + 1}
+                          </label>
+                          <button
+                            onClick={() => handleRemoveAdCopy(idx)}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <textarea
+                          value={copy}
+                          onChange={(e) => handleUpdateAdCopy(idx, e.target.value)}
+                          maxLength={300}
+                          rows={3}
+                          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 transition-colors resize-none"
+                          placeholder="Écrivez votre ad copy..."
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{copy.length}/300</p>
+                      </div>
+                    ))}
+                 </div>
+              )}
             </div>
           )}
 

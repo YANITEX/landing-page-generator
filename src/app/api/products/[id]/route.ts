@@ -14,6 +14,15 @@ export async function GET(
         images: {
           orderBy: { order: 'asc' },
         },
+        personas: {
+          include: {
+            marketingAngles: {
+              include: {
+                adCopies: true
+              }
+            }
+          }
+        },
         landingPages: {
           select: { id: true },
         },
@@ -27,7 +36,17 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(product);
+    // Aplatir les ad copies pour la compatibilité frontend
+    const flatAdCopies = product.personas?.flatMap(p => 
+      p.marketingAngles?.flatMap(m => 
+        m.adCopies?.map(a => a.text) || []
+      ) || []
+    ) || [];
+
+    return NextResponse.json({
+      ...product,
+      adCopies: flatAdCopies
+    });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json(
@@ -160,12 +179,55 @@ export async function PUT(
       };
     }
 
+
+    // Gérer les mises à jour des Personas (édition directe)
+    if (body.personas && Array.isArray(body.personas)) {
+      // Pour permettre l'édition inline, on va supprimer et recréer les personas fournis
+      // C'est une stratégie "replace" pour simplifier la gestion des relations imbriquées
+      console.log('Replacing personas strategy...');
+      
+      // On supprime d'abord les personas existants pour ce produit
+      await prisma.persona.deleteMany({
+        where: { productId: id }
+      });
+
+      // On prépare la création des nouveaux
+      updateData.personas = {
+        create: body.personas.map((p: any) => ({
+          name: p.name,
+          description: p.description,
+          marketingAngles: {
+            create: p.marketingAngles?.map((ma: any) => ({
+              name: ma.name,
+              description: ma.description,
+              adCopies: {
+                create: ma.adCopies?.map((ac: any) => ({
+                  text: ac.text,
+                  cta: ac.cta,
+                  platform: ac.platform
+                }))
+              }
+            }))
+          }
+        }))
+      };
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: updateData,
       include: {
         images: {
           orderBy: { order: 'asc' },
+        },
+        personas: {
+          include: {
+            marketingAngles: {
+              include: {
+                adCopies: true
+              }
+            }
+          }
         },
         landingPages: { select: { id: true } },
       },

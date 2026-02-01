@@ -30,14 +30,57 @@ model Product {
   // Bénéfices (JSON)
   benefits    Json?
   
-  // Ad Copies (JSON array, 1-5 optionnelles)
-  adCopies    Json?
+  // ANCIEN: Ad Copies (JSON array) - Remplacé par la structure Persona -> MarketingAngle -> AdCopy
+  // adCopies    Json?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   images       ProductImage[]
-  landingPages LandingPage[]
+  personas     Persona[]
+  landingPages LandingPage[] // Gardé pour rétrocompatibilité, mais idéalement on passe par les personas
+}
+
+model Persona {
+  id          String   @id @default(cuid())
+  name        String   // Ex: "Maman occupée", "Étudiant fauché"
+  description String?  // Description détaillée du persona, douleurs, désirs
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  marketingAngles MarketingAngle[]
+  landingPages    LandingPage[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MarketingAngle {
+  id          String   @id @default(cuid())
+  name        String   // Ex: "Gain de temps", "Économie d'argent"
+  description String?  // Explication de l'angle
+  
+  personaId   String
+  persona     Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  
+  adCopies    AdCopy[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AdCopy {
+  id               String   @id @default(cuid())
+  text             String   // Corps du texte avec emojis et structuré
+  cta              String?  // Appel à l'action spécifique
+  platform         String?  // Ex: "Facebook", "TikTok", "Email"
+  
+  marketingAngleId String
+  marketingAngle   MarketingAngle @relation(fields: [marketingAngleId], references: [id], onDelete: Cascade)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model ProductImage {
@@ -52,8 +95,13 @@ model ProductImage {
 
 model LandingPage {
   id          String   @id @default(cuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  productId   String?  // Rendu optionnel pour transition vers Persona
+  product     Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  personaId   String?  // Nouvelle relation vers Persona
+  persona     Persona? @relation(fields: [personaId], references: [id], onDelete: Cascade)
   
   // Informations produit
   headline    String

@@ -38,6 +38,8 @@ Ta tâche est de générer du contenu marketing pour le produit montré dans l'i
 
 CRUCIAL: TOUT le contenu généré doit être rédigé en langue : ${language}.
 
+La génération doit être centrée sur un PERSONA fort.
+
 Génère toutes les suggestions suivantes au format JSON STRICT et sans autre texte:
 {
   "productName": "Nom court du produit (en ${language})",
@@ -50,13 +52,37 @@ Génère toutes les suggestions suivantes au format JSON STRICT et sans autre te
     {"title": "Titre du bénéfice (max 50 caractères, en ${language})", "description": "Description courte (max 150 caractères, en ${language})"},
     {"title": "Titre du bénéfice (max 50 caractères, en ${language})", "description": "Description courte (max 150 caractères, en ${language})"}
   ],
-  "adCopies": [
-    "Ad copy 1 (en ${language})",
-    "Ad copy 2 (en ${language})",
-    "Ad copy 3 (en ${language})",
-    "Ad copy 4 (en ${language})",
-    "Ad copy 5 (en ${language})"
-  ]
+  "persona": {
+    "name": "Nom du persona principal (ex: Maman pressée)",
+    "description": "Description détaillée du persona",
+    "marketingAngles": [
+      {
+        "name": "Angle 1 (ex: Gain de temps)",
+        "adCopies": [
+          {
+            "text": "Corps du texte ad copy 1 avec emojis et CTA clair",
+            "cta": "Texte du bouton",
+            "platform": "Facebook/Instagram"
+          },
+          {
+            "text": "Corps du texte ad copy 2...",
+            "cta": "Texte du bouton",
+            "platform": "TikTok"
+          }
+        ]
+      },
+      {
+        "name": "Angle 2 (ex: Facilité d'utilisation)",
+        "adCopies": [
+          {
+             "text": "Corps du texte ad copy 3...",
+             "cta": "Texte du bouton",
+             "platform": "Facebook"
+          }
+        ]
+      }
+    ]
+  }
 }
 Respecte strictement ce format JSON.`;
 
@@ -78,12 +104,18 @@ Respecte strictement ce format JSON.`;
 
     const parsed = JSON.parse(jsonMatch[0]);
 
+    // Flatten ad copies for backward compatibility if needed, but primarily return the new structure
+    const flatAdCopies = parsed.persona?.marketingAngles?.flatMap((angle: any) => 
+      angle.adCopies?.map((copy: any) => copy.text)
+    ) || [];
+
     return NextResponse.json({
       productName: parsed.productName || '',
       headline: parsed.headline || '',
       description: parsed.description || '',
       benefits: Array.isArray(parsed.benefits) ? parsed.benefits.slice(0, 5) : [],
-      adCopies: Array.isArray(parsed.adCopies) ? parsed.adCopies.slice(0, 5) : [],
+      adCopies: flatAdCopies, // Keep for legacy frontend support during transition
+      persona: parsed.persona // Valid new structure
     });
   } catch (error) {
     console.error('Error generating from image:', error);
