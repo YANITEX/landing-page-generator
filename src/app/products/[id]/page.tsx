@@ -1,5 +1,7 @@
 'use client';
 
+// Page product details with inline editing capabilities (v1.0.1)
+
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
