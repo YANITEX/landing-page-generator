@@ -350,20 +350,20 @@ export default function ProductDetailPage() {
                              <div className="space-y-2">
                                  <EditableField 
                                     value={benefit.title} 
-                                    onSave={(v) => {
+                                    onSave={async (v) => {
                                        const newBenefits = [...(product.benefits||[])];
                                        newBenefits[idx].title = v;
-                                       updateProductField('benefits', newBenefits);
+                                       await updateProductField('benefits', newBenefits);
                                     }}
                                     className="font-bold text-emerald-400"
                                     placeholder="Titre du bénéfice"
                                  />
                                  <EditableField 
                                     value={benefit.description} 
-                                    onSave={(v) => {
+                                    onSave={async (v) => {
                                        const newBenefits = [...(product.benefits||[])];
                                        newBenefits[idx].description = v;
-                                       updateProductField('benefits', newBenefits);
+                                       await updateProductField('benefits', newBenefits);
                                     }}
                                     className="text-gray-400 text-sm"
                                     multiline
