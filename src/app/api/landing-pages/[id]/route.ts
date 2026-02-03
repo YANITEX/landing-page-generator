@@ -51,3 +51,41 @@ export async function GET(
     );
   }
 }
+
+// DELETE - Supprimer une landing page
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    
+    // Vérifier si la landing page existe
+    const landingPage = await prisma.landingPage.findUnique({
+      where: { id }
+    });
+
+    if (!landingPage) {
+      return NextResponse.json(
+        { error: 'Landing page introuvable' },
+        { status: 404 }
+      );
+    }
+
+    // Supprimer la landing page (Prisma supprimera automatiquement les sections et benefits associés grâce à onDelete: Cascade)
+    await prisma.landingPage.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Landing page supprimée avec succès' 
+    });
+  } catch (error) {
+    console.error('Error deleting landing page:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la suppression de la landing page' },
+      { status: 500 }
+    );
+  }
+}

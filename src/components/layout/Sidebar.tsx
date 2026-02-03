@@ -38,7 +38,7 @@ export default function Sidebar() {
     { name: 'UGC Photo', icon: Image, href: '/ugc-photo' },
     { name: 'UGC Video', icon: Video, href: '/ugc-video', badge: 'Bientot' },
     { name: 'Premium UGC', icon: Sparkles, href: '/premium-ugc' },
-    { name: 'Landing Page', icon: Layers, href: '/landing-page' },
+    { name: 'Landing Page', icon: Layers, href: '/landing-pages' },
     { name: 'Ad Creative', icon: Megaphone, href: '/ad-creative' },
     { name: 'Voice Generation', icon: Mic, href: '/voice', badge: 'Bientot' },
     { name: 'Product Showcase', icon: ShoppingBag, href: '/product-showcase' },

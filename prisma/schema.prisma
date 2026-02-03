@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL_UNPOOLED")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model Product {
@@ -146,9 +146,9 @@ model Section {
   id             String      @id @default(cuid())
   type           String      // hero, problem, solution, before-after, benefits, how-it-works, social-proof, cta
   title          String?
-  content        String?     @db.Text
-  images         String[]
-  prompt         String?     @db.Text
+  content        String?     // Text sans @db.Text pour SQLite
+  images         String      // JSON array d'images en string
+  prompt         String?     // Text sans @db.Text pour SQLite
   order          Int         @default(0)
   isActive       Boolean     @default(true)
   generationStatus String    @default("pending") // pending, generating, completed, error
