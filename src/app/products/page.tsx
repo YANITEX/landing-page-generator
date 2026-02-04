@@ -124,7 +124,13 @@ export default function ProductsPage() {
                 >
                     {/* Image Preview */}
                     <div 
-                      onClick={() => router.push(`/products/${product.id}`)}
+                      onClick={() => {
+                        if (product.id && typeof product.id === 'string' && product.id.trim() !== '') {
+                          router.push(`/products/${product.id}`);
+                        } else {
+                          console.error('Invalid product ID:', product.id);
+                        }
+                      }}
                       className="h-40 bg-gradient-to-br from-emerald-500/20 to-teal-600/20 flex items-center justify-center relative overflow-hidden cursor-pointer"
                     >
                       {product.images.length > 0 ? (
@@ -140,7 +146,13 @@ export default function ProductsPage() {
 
                     {/* Content */}
                     <div 
-                      onClick={() => router.push(`/products/${product.id}`)}
+                      onClick={() => {
+                        if (product.id && typeof product.id === 'string' && product.id.trim() !== '') {
+                          router.push(`/products/${product.id}`);
+                        } else {
+                          console.error('Invalid product ID:', product.id);
+                        }
+                      }}
                       className="p-5 cursor-pointer"
                     >
                       <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">
@@ -167,7 +179,11 @@ export default function ProductsPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/products/${product.id}/edit`);
+                            if (product.id && typeof product.id === 'string' && product.id.trim() !== '') {
+                              router.push(`/products/${product.id}/edit`);
+                            } else {
+                              console.error('Invalid product ID for edit:', product.id);
+                            }
                           }}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors text-sm font-medium"
                         >

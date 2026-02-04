@@ -369,7 +369,7 @@ export default function CreateProductPage() {
       <Sidebar />
       <TopNav />
 
-      <main className="ml-64 pt-16 p-8 pb-24">
+      <main className="ml-64 pt-16 p-8">
         <div className="max-w-4xl mx-auto">
           {/* Steps Navigation */}
           <div className="mb-8">
@@ -1046,28 +1046,17 @@ export default function CreateProductPage() {
               )}
             </div>
           )}
-        </div>
-      </main>
 
-      {/* Sticky Footer avec navigation */}
-      <div className="fixed bottom-0 left-64 right-0 bg-[#0a1520]/95 backdrop-blur-sm border-t border-gray-800 p-4 z-10">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <button
-            onClick={() => setStep(Math.max(1, step - 1))}
-            disabled={step === 1}
-            className="px-6 py-3 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Retour
-          </button>
-          
-          <div className="flex items-center gap-4">
-            {/* Indicateur d'étape */}
-            <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/30">
-              <Target className="w-4 h-4" />
-              <span className="text-sm font-medium">Étape {step}/5 - {getStepTitle(step)}</span>
-            </div>
-            
-            {/* Bouton principal */}
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-12 pt-8 border-t border-white/10">
+            <button
+              onClick={() => setStep(Math.max(1, step - 1))}
+              disabled={step === 1}
+              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Retour
+            </button>
+
             {step < 5 ? (
               <button
                 onClick={() => {
@@ -1098,19 +1087,7 @@ export default function CreateProductPage() {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
-
-  // Fonction pour obtenir le titre de l'étape
-  function getStepTitle(step: number): string {
-    switch (step) {
-      case 1: return "Images";
-      case 2: return "Informations";
-      case 3: return "Prix & CTA";
-      case 4: return "Avantages";
-      case 5: return "Copies pub";
-      default: return "";
-    }
-  }
 }

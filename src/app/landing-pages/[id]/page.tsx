@@ -26,6 +26,8 @@ export default function LandingPagePreview() {
   const [landingPage, setLandingPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [fullscreenMode, setFullscreenMode] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<any>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const handleDelete = async () => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer la landing page "${landingPage?.headline}" ?\n\nCette action est irréversible et supprimera toutes les sections associées.`)) {
@@ -163,6 +165,74 @@ export default function LandingPagePreview() {
 
   return (
     <div className="min-h-screen bg-[#0a1520]">
+      {/* Modal pour afficher la section en grand */}
+      {selectedSection && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setSelectedSection(null)}
+        >
+          <div 
+            className="relative max-w-6xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton fermer */}
+            <button
+              onClick={() => setSelectedSection(null)}
+              className="absolute -top-12 right-0 text-white hover:text-emerald-400 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Navigation entre images si plusieurs */}
+            {getImages(selectedSection).length > 1 && (
+              <>
+                <button
+                  onClick={() => setSelectedImageIndex(prev => Math.max(0, prev - 1))}
+                  disabled={selectedImageIndex === 0}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSelectedImageIndex(prev => Math.min(getImages(selectedSection).length - 1, prev + 1))}
+                  disabled={selectedImageIndex === getImages(selectedSection).length - 1}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Image */}
+            <div className="bg-gray-900 rounded-2xl overflow-hidden">
+              <img
+                src={getImages(selectedSection)[selectedImageIndex]}
+                alt={`${selectedSection.type} - Image ${selectedImageIndex + 1}`}
+                className="w-full h-auto max-h-[80vh] object-contain"
+              />
+            </div>
+
+            {/* Info section */}
+            <div className="mt-4 text-center">
+              <h3 className="text-white text-lg font-semibold capitalize mb-2">
+                {selectedSection.type.replace('-', ' ')}
+              </h3>
+              {getImages(selectedSection).length > 1 && (
+                <p className="text-gray-400 text-sm">
+                  Image {selectedImageIndex + 1} / {getImages(selectedSection).length}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <Sidebar />
       <TopNav />
 
@@ -362,6 +432,9 @@ export default function LandingPagePreview() {
 
 // Composant pour l'aperçu normal avec sidebar
 function RegularPreview({ landingPage, sectionsWithImages, isGenerating }: any) {
+  const [selectedSection, setSelectedSection] = useState<any>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
   if (sectionsWithImages.length === 0 && !isGenerating) {
     return (
       <div className="flex items-center justify-center h-96 bg-[#0f1d2a] rounded-2xl border border-gray-800">
@@ -380,6 +453,80 @@ function RegularPreview({ landingPage, sectionsWithImages, isGenerating }: any) 
 
   return (
     <div className="space-y-6">
+      {/* Modal pour afficher la section en grand */}
+      {selectedSection && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => {
+            setSelectedSection(null);
+            setSelectedImageIndex(0);
+          }}
+        >
+          <div 
+            className="relative max-w-6xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton fermer */}
+            <button
+              onClick={() => {
+                setSelectedSection(null);
+                setSelectedImageIndex(0);
+              }}
+              className="absolute -top-12 right-0 text-white hover:text-emerald-400 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Navigation entre images si plusieurs */}
+            {getImages(selectedSection).length > 1 && (
+              <>
+                <button
+                  onClick={() => setSelectedImageIndex(prev => Math.max(0, prev - 1))}
+                  disabled={selectedImageIndex === 0}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSelectedImageIndex(prev => Math.min(getImages(selectedSection).length - 1, prev + 1))}
+                  disabled={selectedImageIndex === getImages(selectedSection).length - 1}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Image */}
+            <div className="bg-gray-900 rounded-2xl overflow-hidden">
+              <img
+                src={getImages(selectedSection)[selectedImageIndex]}
+                alt={`${selectedSection.type} - Image ${selectedImageIndex + 1}`}
+                className="w-full h-auto max-h-[80vh] object-contain"
+              />
+            </div>
+
+            {/* Info section */}
+            <div className="mt-4 text-center">
+              <h3 className="text-white text-lg font-semibold capitalize mb-2">
+                {selectedSection.type.replace('-', ' ')}
+              </h3>
+              {getImages(selectedSection).length > 1 && (
+                <p className="text-gray-400 text-sm">
+                  Image {selectedImageIndex + 1} / {getImages(selectedSection).length}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {landingPage.sections?.map((section: any, index: number) => (
           <div key={section.id} className="bg-[#0f1d2a] rounded-xl border border-gray-800 overflow-hidden">
@@ -392,12 +539,25 @@ function RegularPreview({ landingPage, sectionsWithImages, isGenerating }: any) 
                   </div>
                 </div>
               ) : getImages(section)[0] ? (
-                <Image
-                  src={getImages(section)[0]}
-                  alt={section.type}
-                  fill
-                  className="object-cover"
-                />
+                <div 
+                  className="cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => {
+                    setSelectedSection(section);
+                    setSelectedImageIndex(0);
+                  }}
+                >
+                  <Image
+                    src={getImages(section)[0]}
+                    alt={section.type}
+                    fill
+                    className="object-cover"
+                  />
+                  {getImages(section).length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      {getImages(section).length} images
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center text-gray-500">
@@ -505,6 +665,9 @@ function getStatusText(status: string): string {
 }
 
 function LandingPageSection({ section, landingPage, isLast }: any) {
+  const [showModal, setShowModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  
   const isGenerating = 
     section.generationStatus === 'pending' || section.generationStatus === 'generating';
   
@@ -558,6 +721,80 @@ function LandingPageSection({ section, landingPage, isLast }: any) {
 
   return (
     <div className={`w-full relative ${!isLast ? '' : ''}`}>
+      {/* Modal pour afficher les images en grand */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => {
+            setShowModal(false);
+            setSelectedImageIndex(0);
+          }}
+        >
+          <div 
+            className="relative max-w-6xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton fermer */}
+            <button
+              onClick={() => {
+                setShowModal(false);
+                setSelectedImageIndex(0);
+              }}
+              className="absolute -top-12 right-0 text-white hover:text-emerald-400 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Navigation entre images si plusieurs */}
+            {getImages(section).length > 1 && (
+              <>
+                <button
+                  onClick={() => setSelectedImageIndex(prev => Math.max(0, prev - 1))}
+                  disabled={selectedImageIndex === 0}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSelectedImageIndex(prev => Math.min(getImages(section).length - 1, prev + 1))}
+                  disabled={selectedImageIndex === getImages(section).length - 1}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Image */}
+            <div className="bg-gray-900 rounded-2xl overflow-hidden">
+              <img
+                src={getImages(section)[selectedImageIndex]}
+                alt={`${section.type} - Image ${selectedImageIndex + 1}`}
+                className="w-full h-auto max-h-[80vh] object-contain"
+              />
+            </div>
+
+            {/* Info section */}
+            <div className="mt-4 text-center">
+              <h3 className="text-white text-lg font-semibold capitalize mb-2">
+                {getSectionTypeName(section.type)}
+              </h3>
+              {getImages(section).length > 1 && (
+                <p className="text-gray-400 text-sm">
+                  Image {selectedImageIndex + 1} / {getImages(section).length}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Badge de type de section */}
       <div className="absolute top-8 left-8 z-10">
         <div className="px-4 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg text-white font-medium text-sm">
@@ -566,12 +803,18 @@ function LandingPageSection({ section, landingPage, isLast }: any) {
       </div>
 
       {/* Image générée pleine largeur */}
-      <div className="w-full h-screen relative overflow-hidden">
+      <div 
+        className="w-full h-screen relative overflow-hidden cursor-pointer group"
+        onClick={() => {
+          setShowModal(true);
+          setSelectedImageIndex(0);
+        }}
+      >
         <Image
           src={getImages(section)[0]}
           alt={`${getSectionTypeName(section.type)} - ${landingPage.headline}`}
           fill
-          className="object-cover"
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
           priority={section.type === 'hero'}
           onError={(e) => {
             console.error('Error loading image:', e);
@@ -579,7 +822,23 @@ function LandingPageSection({ section, landingPage, isLast }: any) {
         />
         
         {/* Overlay gradient subtil pour améliorer la lisibilité */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 group-hover:from-black/40 transition-colors"></div>
+        
+        {/* Badge pour plusieurs images */}
+        {getImages(section).length > 1 && (
+          <div className="absolute top-8 right-8 bg-black/60 backdrop-blur-md text-white text-sm px-3 py-1.5 rounded-full border border-white/10">
+            {getImages(section).length} images
+          </div>
+        )}
+        
+        {/* Indicateur de click */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="bg-black/60 backdrop-blur-md text-white px-6 py-3 rounded-full border border-white/20">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+            </svg>
+          </div>
+        </div>
         
         {/* Indicateur de progression en bas */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">

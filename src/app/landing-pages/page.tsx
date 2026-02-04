@@ -32,34 +32,19 @@ export default function LandingPagesList() {
   const router = useRouter();
 
   // Fonction helper pour parser les images depuis JSON string
-  const getImages = (imagesString: string | string[] | undefined): string[] => {
-    if (!imagesString) return [];
-    if (Array.isArray(imagesString)) return imagesString;
-    try {
-      const parsed = JSON.parse(imagesString);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  };
-
-  // Fonction pour obtenir la première image disponible
-  const getFirstAvailableImage = (lp: LandingPage): string | null => {
-    // Chercher d'abord dans les sections
-    for (const section of lp.sections || []) {
-      const images = getImages(section.images);
-      if (images.length > 0) {
-        return images[0];
+  const getImages = (imagesData: any): string[] => {
+    if (!imagesData) return [];
+    if (Array.isArray(imagesData)) return imagesData;
+    if (typeof imagesData === 'string') {
+      try {
+        const parsed = JSON.parse(imagesData);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error('Failed to parse images:', e);
+        return [];
       }
     }
-    // Fallback sur l'image du produit si disponible
-    if (lp.product && 'images' in lp.product && Array.isArray(lp.product.images)) {
-      const productImages = lp.product.images as Array<{url: string; isPrimary?: boolean}>;
-      const primaryImage = productImages.find(img => img.isPrimary);
-      if (primaryImage) return primaryImage.url;
-      if (productImages.length > 0) return productImages[0].url;
-    }
-    return null;
+    return [];
   };
 
   const fetchLandingPages = () => {
@@ -80,7 +65,12 @@ export default function LandingPagesList() {
         
         // S'assurer que data est un array
         if (Array.isArray(data)) {
-          setLandingPages(data);
+          // Filtrer les landing pages avec des IDs invalides
+          const validLandingPages = data.filter(lp => 
+            lp && lp.id && typeof lp.id === 'string' && lp.id.trim() !== ''
+          );
+          console.log(`Filtered ${data.length} -> ${validLandingPages.length} valid landing pages`);
+          setLandingPages(validLandingPages);
         } else {
           console.error('API response is not an array:', data);
           // Si c'est un objet avec une propriété error, c'est une erreur de l'API
@@ -99,6 +89,22 @@ export default function LandingPagesList() {
 
   useEffect(() => {
     fetchLandingPages();
+
+    // Interceptor temporaire pour capturer les navigations malformées
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'A') {
+        const href = (target as HTMLAnchorElement).href;
+        if (href && (href.endsWith('/[') || href.includes('/['))) {
+          console.error('❌ Detected malformed URL navigation:', href);
+          console.error('❌ Target element:', target);
+          event.preventDefault();
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
   }, []);
 
   const handleDelete = async (landingPageId: string, headline: string) => {
@@ -175,10 +181,9 @@ export default function LandingPagesList() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {Array.isArray(landingPages) && landingPages.map((lp) => {
-                        const completedSections = lp.sections?.filter((s: any) => {
-                            const images = getImages(s.images);
-                            return s.generationStatus === 'completed' && images.length > 0;
-                        }).length || 0;
+                        const completedSections = lp.sections?.filter((s: any) => 
+                            s.generationStatus === 'completed' && s.images?.length > 0
+                        )?.length || 0;
                         const totalSections = lp.sections?.length || 0;
                         const isGenerating = lp.sections?.some((s: any) => 
                             s.generationStatus === 'pending' || s.generationStatus === 'generating'
@@ -193,44 +198,49 @@ export default function LandingPagesList() {
                                     <div 
                                         className="h-48 relative flex items-center justify-center cursor-pointer" 
                                         style={{ backgroundColor: lp.backgroundColor || '#0f1d2a' }}
-                                        onClick={() => router.push(`/landing-pages/${lp.id}`)}
+                                        onClick={() => {
+                                            if (lp.id && typeof lp.id === 'string' && lp.id.trim() !== '') {
+                                                router.push(`/landing-pages/${lp.id}`);
+                                            } else {
+                                                console.error('Invalid landing page ID:', lp.id);
+                                            }
+                                        }}
                                     >
-                                        {/* Preview avec la première image disponible */}
+                                        {/* Preview de la première section si disponible */}
                                         {(() => {
-                                            const firstImage = getFirstAvailableImage(lp);
-                                            return firstImage ? (
-                                                <div className="w-full h-full relative overflow-hidden">
-                                                    <div 
-                                                        className="w-full h-full bg-cover bg-center transition-transform hover:scale-105 duration-300"
-                                                        style={{ 
-                                                            backgroundImage: `url(${firstImage})`,
-                                                            backgroundSize: 'cover',
-                                                            backgroundPosition: 'center'
-                                                        }}
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f1d2a]/80 via-transparent to-[#0f1d2a]/40"></div>
-                                                    {/* Overlay avec infos */}
-                                                    <div className="absolute bottom-4 left-4 right-4">
-                                                        <div className="text-white text-sm font-medium truncate bg-black/40 px-3 py-2 rounded-lg backdrop-blur-sm">
-                                                            {lp.headline}
-                                                        </div>
+                                            // Trouver la première section avec des images
+                                            const sectionWithImages = lp.sections?.find((s: any) => {
+                                                const images = getImages(s.images);
+                                                return images.length > 0;
+                                            });
+
+                                            if (sectionWithImages) {
+                                                const images = getImages(sectionWithImages.images);
+                                                const firstImage = images[0];
+
+                                                return (
+                                                    <div className="w-full h-full relative overflow-hidden">
+                                                        <div 
+                                                            className="w-full h-full bg-cover bg-center"
+                                                            style={{ 
+                                                                backgroundImage: `url(${firstImage})`,
+                                                                backgroundSize: 'cover',
+                                                                backgroundPosition: 'center'
+                                                            }}
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f1d2a] via-transparent to-[#0f1d2a]/30"></div>
                                                     </div>
-                                                </div>
-                                            ) : (
+                                                );
+                                            }
+
+                                            return (
                                                 <>
-                                                    {/* Fallback design avec palette de couleurs */}
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800/50 to-gray-900/50"></div>
-                                                    <div className="flex flex-col items-center justify-center gap-4 relative z-10 p-6">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <div className="w-8 h-8 rounded-full shadow-lg border-2 border-white/20 animate-pulse" style={{ backgroundColor: lp.primaryColor || '#10b981' }}></div>
-                                                            <div className="w-8 h-8 rounded-full shadow-lg border-2 border-white/20 animate-pulse" style={{ backgroundColor: lp.secondaryColor || '#3b82f6' }}></div>
-                                                            <div className="w-8 h-8 rounded-full shadow-lg border-2 border-white/20 animate-pulse" style={{ backgroundColor: lp.accentColor || '#8b5cf6' }}></div>
-                                                        </div>
-                                                        <div className="text-center">
-                                                            <Layout className="w-12 h-12 text-gray-400 mb-2 mx-auto opacity-50" />
-                                                            <p className="text-gray-400 text-sm font-medium">{lp.headline}</p>
-                                                            <p className="text-gray-500 text-xs mt-1">Images en génération...</p>
-                                                        </div>
+                                                    {/* Fallback design avec palette */}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f1d2a] to-transparent opacity-50"></div>
+                                                    <div className="flex items-center justify-center gap-3 relative z-10 p-4 bg-black/20 backdrop-blur-sm rounded-xl border border-white/10">
+                                                        <div className="w-8 h-8 rounded-full shadow-lg border-2 border-white/20" style={{ backgroundColor: lp.primaryColor }}></div>
+                                                        <div className="w-8 h-8 rounded-full shadow-lg border-2 border-white/20" style={{ backgroundColor: lp.secondaryColor }}></div>
+                                                        <div className="w-8 h-8 rounded-full shadow-lg border-2 border-white/20" style={{ backgroundColor: lp.accentColor }}></div>
                                                     </div>
                                                 </>
                                             );
@@ -270,7 +280,13 @@ export default function LandingPagesList() {
                                     
                                     <div 
                                         className="p-6 cursor-pointer"
-                                        onClick={() => router.push(`/landing-pages/${lp.id}`)}
+                                        onClick={() => {
+                                            if (lp.id && typeof lp.id === 'string' && lp.id.trim() !== '') {
+                                                router.push(`/landing-pages/${lp.id}`);
+                                            } else {
+                                                console.error('Invalid landing page ID:', lp.id);
+                                            }
+                                        }}
                                     >
                                         <h3 className="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-emerald-400 transition-colors">
                                             {lp.headline || "Page sans titre"}
@@ -294,7 +310,11 @@ export default function LandingPagesList() {
                                                 <button 
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        router.push(`/landing-pages/${lp.id}/edit`);
+                                                        if (lp.id && typeof lp.id === 'string' && lp.id.trim() !== '') {
+                                                            router.push(`/landing-pages/${lp.id}/edit`);
+                                                        } else {
+                                                            console.error('Invalid landing page ID for edit:', lp.id);
+                                                        }
                                                     }}
                                                     className="text-gray-400 hover:text-emerald-400 text-xs font-medium flex items-center gap-1 transition-colors"
                                                 >

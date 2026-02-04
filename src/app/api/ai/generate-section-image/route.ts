@@ -20,6 +20,29 @@ export async function POST(request: NextRequest) {
     if (!sectionId) {
       return NextResponse.json({ error: 'Section ID is required' }, { status: 400 });
     }
+    
+    if (!prompt) {
+      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    }
+
+    // Charger la section et la landing page depuis la base de données
+    const section = await prisma.section.findUnique({
+      where: { id: sectionId },
+      include: {
+        landingPage: {
+          select: {
+            primaryColor: true,
+            secondaryColor: true,
+            accentColor: true,
+            backgroundColor: true,
+          }
+        }
+      }
+    });
+
+    if (!section) {
+      return NextResponse.json({ error: 'Section not found' }, { status: 404 });
+    }
 
     // Update status to generating
     await prisma.section.update({
@@ -27,30 +50,27 @@ export async function POST(request: NextRequest) {
       data: { generationStatus: 'generating' },
     });
 
-    // Clean up prompt - handle both object and JSON string
-    let finalPrompt = prompt;
-    if (typeof prompt === 'object' && prompt !== null) {
-        // Prompt is already parsed as an object
-        finalPrompt = `Create a professional landing page section image. 
-        Style: ${prompt.style || 'modern'}. 
-        Mood: ${prompt.mood || 'professional'}.
-        Content focus: ${prompt.focus || 'product display'}.
-        Details: ${Object.entries(prompt).map(([k,v]) => `${k}: ${v}`).join(', ')}`;
-    } else if (typeof prompt === 'string' && prompt.trim().startsWith('{')) {
-        try {
-            const jsonPrompt = JSON.parse(prompt);
-            // Construct a descriptive prompt
-            finalPrompt = `Create a professional landing page section image. 
-            Style: ${jsonPrompt.style || 'modern'}. 
-            Mood: ${jsonPrompt.mood || 'professional'}.
-            Content focus: ${jsonPrompt.focus || 'product display'}.
-            Details: ${Object.entries(jsonPrompt).map(([k,v]) => `${k}: ${v}`).join(', ')}`;
-        } catch (e) {
-            // Use as is if not valid JSON
-        }
-    }
+    // Construire le prompt structuré au format JSON demandé
+    const structuredPrompt = {
+      mode: "image_to_image",
+      language: section.landingPage ? "fr" : "fr", // Peut être récupéré de la BD si nécessaire
+      canvas: {
+        width: 1440,
+        height: "auto",
+        sectionType: section.type
+      },
+      palette: {
+        primaryColor: section.landingPage?.primaryColor || "auto",
+        secondaryColor: section.landingPage?.secondaryColor || "auto",
+        accentColor: section.landingPage?.accentColor || "auto",
+        backgroundColor: section.landingPage?.backgroundColor || "auto",
+      },
+      prompt: prompt // Le prompt du client (obligatoire)
+    };
 
-    console.log('Final prompt generated:', finalPrompt.slice(0, 200) + '...');
+    const finalPrompt = JSON.stringify(structuredPrompt, null, 2);
+    
+    console.log('Structured prompt:', finalPrompt);
 
     // Initialize AI with the specific SDK for Image Generation
     // Fallback to API_KEY if GEMINI_API_KEY is not set
@@ -115,9 +135,15 @@ export async function POST(request: NextRequest) {
       throw new Error("No response from Gemini API");
     }
 
+    // Vérifications de sécurité pour TypeScript
+    const candidate = response.candidates[0];
+    if (!candidate?.content?.parts) {
+      throw new Error("Invalid response structure from Gemini API");
+    }
+
     // Iterate through all parts to find the resulting image
     let output = '';
-    for (const part of response.candidates[0].content.parts) {
+    for (const part of candidate.content.parts) {
       if (part.inlineData) {
         output = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
         break;

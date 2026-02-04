@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Sidebar from '@/components/layout/Sidebar';
 import TopNav from '@/components/layout/TopNav';
@@ -58,6 +58,7 @@ const DEFAULT_SECTIONS: Record<SectionType, object> = {
 
 export default function CreateLandingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -70,8 +71,21 @@ export default function CreateLandingPage() {
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  
   const [newPersonaName, setNewPersonaName] = useState('');
   const [isCreatingPersona, setIsCreatingPersona] = useState(false);
+
+  // Extraire les paramètres URL une seule fois
+  const productIdFromUrl = searchParams.get('productId');
+  const personaIdFromUrl = searchParams.get('personaId');
+
+  // Pré-remplir depuis les paramètres URL
+  useEffect(() => {
+    if (productIdFromUrl) {
+      setSelectedProductId(productIdFromUrl);
+    }
+    // Le personaId sera défini après le chargement des personas
+  }, [productIdFromUrl]);
 
   // Step 2: Palette
   const [palette, setPalette] = useState({
@@ -134,14 +148,19 @@ export default function CreateLandingPage() {
         .then(res => res.json())
         .then(data => {
             setPersonas(data);
-            if (data.length > 0) setSelectedPersonaId(data[0].id);
+            // Priorité : personaId de l'URL > premier persona de la liste
+            if (personaIdFromUrl && data.find((p: Persona) => p.id === personaIdFromUrl)) {
+              setSelectedPersonaId(personaIdFromUrl);
+            } else if (data.length > 0) {
+              setSelectedPersonaId(data[0].id);
+            }
         })
         .catch(err => console.error(err));
     } else {
         setPersonas([]);
         setSelectedPersonaId('');
     }
-  }, [selectedProductId]);
+  }, [selectedProductId, personaIdFromUrl]);
 
   const handleCreatePersona = async () => {
     if (!newPersonaName || !selectedProductId) return;

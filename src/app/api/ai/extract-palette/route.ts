@@ -43,16 +43,11 @@ export async function POST(request: NextRequest) {
         "accent": "code hex",
         "background": "code hex"
       }
-      
-      Critères :
-      - primary: couleur dominante ou couleur de marque visible sur le produit
-      - secondary: couleur complémentaire ou secondaire du produit
-      - accent: couleur vive pour les CTA et éléments importants
-      - background: couleur neutre claire ou foncée pour le fond
+
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {

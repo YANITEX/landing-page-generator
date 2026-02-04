@@ -7,13 +7,27 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
   ChevronLeft, ChevronRight, Edit2, Trash2, AlertCircle, Copy, Target, 
   MessageSquare, Sparkles, Check, CheckCircle2, Plus, Loader, RotateCw, 
-  Save, X, Upload, Image as ImageIcon, ChevronDown 
+  Save, X, Upload, Image as ImageIcon, ChevronDown, FileText, Eye, ExternalLink, Smartphone, Layers 
 } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 // Interfaces
+interface LandingPageFull { 
+  id: string; 
+  headline: string; 
+  status: string; 
+  createdAt: string; 
+  sections?: Array<{
+    id: string;
+    type: string;
+    images: string;
+  }>;
+}
+interface LandingPagePreview { id: string; headline: string; status: string; createdAt: string; sections?: any[]; }
 interface AdCopy { id: string; text: string; cta: string | null; platform: string | null; }
 interface MarketingAngle { id: string; name: string; description: string | null; adCopies: AdCopy[]; }
-interface Persona { id: string; name: string; description: string | null; marketingAngles: MarketingAngle[]; }
+interface Persona { id: string; name: string; description: string | null; marketingAngles: MarketingAngle[]; landingPages?: LandingPagePreview[]; }
 interface Product {
   id: string; name: string; description: string; headline: string | null;
   currency: string; priceOld: number | null; priceNew: number | null;
@@ -157,7 +171,7 @@ export default function ProductDetailPage() {
 
   const loadProduct = async () => {
     try {
-      const response = await fetch(`/api/products/${productId}`);
+      const response = await fetch(`/api/products/${productId}?includeLandingPages=true`);
       if (!response.ok) throw new Error('Produit non trouvé');
       const data = await response.json();
       setProduct(data);
@@ -254,30 +268,31 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-           <div className="lg:col-span-4 space-y-4">
-              <div className="bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700 p-4 sticky top-4">
-                  <div className="aspect-square bg-gray-900 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden group">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+           {/* Colonne Image - Plus compacte */}
+           <div className="space-y-4">
+              <div className="bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700 p-3 sticky top-4">
+                  <div className="aspect-square bg-gray-900 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden group">
                      {product.images.length > 0 ? (
                         <img src={product.images[currentImageIndex].url} alt="" className="w-full h-full object-cover" />
                      ) : (
                         <div className="text-center text-gray-500">
-                           <ImageIcon size={48} className="mx-auto mb-2 opacity-30" />
-                           <p>Aucune image</p>
+                           <ImageIcon size={32} className="mx-auto mb-2 opacity-30" />
+                           <p className="text-sm">Aucune image</p>
                         </div>
                      )}
                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                         <label className="cursor-pointer px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 transition-transform hover:scale-105">
-                            <Upload size={16} /> Ajouter Image
+                         <label className="cursor-pointer px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg flex items-center gap-2">
+                            <Upload size={14} /> Ajouter
                             <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => e.target.files && handleImageUpload(e.target.files)} />
                          </label>
-                         {product.images.length > 0 && <button onClick={() => removeImage(currentImageIndex)} className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1 mt-2"><Trash2 size={14}/> Supprimer</button>}
+                         {product.images.length > 0 && <button onClick={() => removeImage(currentImageIndex)} className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1"><Trash2 size={12}/> Supprimer</button>}
                      </div>
                   </div>
                   {product.images.length > 1 && (
-                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                     <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
                         {product.images.map((img, idx) => (
-                           <button key={img.id} onClick={() => setCurrentImageIndex(idx)} className={`w-16 h-16 rounded overflow-hidden flex-shrink-0 border-2 transition-all ${currentImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}>
+                           <button key={img.id} onClick={() => setCurrentImageIndex(idx)} className={`w-12 h-12 rounded overflow-hidden flex-shrink-0 border-2 transition-all ${currentImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}>
                               <img src={img.url} className="w-full h-full object-cover" />
                            </button>
                         ))}
@@ -286,16 +301,17 @@ export default function ProductDetailPage() {
               </div>
            </div>
 
-           <div className="lg:col-span-8 space-y-6">
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700 backdrop-blur-sm">
-                  <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><MessageSquare className="text-emerald-500"/> Informations Générales</h2>
+           {/* Colonne Infos Principales - 2 colonnes */}
+           <div className="lg:col-span-2 space-y-4">
+              <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700 backdrop-blur-sm">
+                  <h2 className="text-base font-semibold text-white mb-3 flex items-center gap-2"><MessageSquare size={16} className="text-emerald-500"/> Informations</h2>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                       <EditableField 
-                         label="Accroche (Headline)" 
+                         label="Accroche" 
                          value={product.headline} 
                          onSave={(v) => updateProductField('headline', v)} 
-                         className="text-xl font-semibold text-emerald-400"
+                         className="text-lg font-semibold text-emerald-400"
                          placeholder="Ex: La solution ultime..."
                          suggestionType="headline"
                          productContext={{ productName: product.name }}
@@ -305,81 +321,95 @@ export default function ProductDetailPage() {
                          label="Description" 
                          value={product.description} 
                          onSave={(v) => updateProductField('description', v)} 
-                         className="text-gray-300 leading-relaxed text-sm"
+                         className="text-gray-300 leading-relaxed text-xs"
                          multiline
                          placeholder="Décrivez votre produit..."
                          suggestionType="description"
                          productContext={{ productName: product.name }}
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-2 gap-4">
                           <div>
-                             <label className="text-xs text-gray-500 uppercase font-semibold mb-1 block">Prix & Devise</label>
-                             <div className="flex gap-2 items-center">
-                                 <EditableField value={product.priceNew} type="number" onSave={(v) => updateProductField('priceNew', v)} className="text-2xl font-bold text-white" placeholder="0.00" />
+                             <label className="text-xs text-gray-500 uppercase font-semibold mb-1 block">Prix</label>
+                             <div className="flex gap-1.5 items-center">
+                                 <EditableField value={product.priceNew} type="number" onSave={(v) => updateProductField('priceNew', v)} className="text-xl font-bold text-white" placeholder="0.00" />
                                  <select 
                                     value={product.currency} 
                                     onChange={(e) => updateProductField('currency', e.target.value)}
-                                    className="bg-gray-800 border-none text-gray-400 font-bold focus:ring-0 cursor-pointer rounded py-1"
+                                    className="bg-gray-800 border-none text-gray-400 text-sm font-bold focus:ring-0 cursor-pointer rounded py-0.5 px-1"
                                  >
                                     {['DA', 'EUR', 'USD', 'MAD', 'TND'].map(c => <option key={c} value={c}>{c}</option>)}
                                  </select>
                              </div>
-                             <div className="mt-1">
-                                <EditableField value={product.priceOld} type="number" onSave={(v) => updateProductField('priceOld', v)} className="text-gray-500 line-through text-sm" placeholder="Ancien prix..." />
-                             </div>
+                             <EditableField value={product.priceOld} type="number" onSave={(v) => updateProductField('priceOld', v)} className="text-gray-500 line-through text-xs" placeholder="Ancien prix..." />
                           </div>
                           
-                          <div className="space-y-4">
-                              <EditableField label="Texte CTA" value={product.ctaText} onSave={(v) => updateProductField('ctaText', v)} className="text-emerald-400 font-medium" />
-                              <EditableField label="Téléphone" value={product.phone} onSave={(v) => updateProductField('phone', v)} className="text-gray-300" placeholder="+213..." />
+                          <div className="space-y-3">
+                              <EditableField label="CTA" value={product.ctaText} onSave={(v) => updateProductField('ctaText', v)} className="text-emerald-400 font-medium text-sm" />
+                              <EditableField label="Téléphone" value={product.phone} onSave={(v) => updateProductField('phone', v)} className="text-gray-300 text-xs" placeholder="+213..." />
                           </div>
                       </div>
                   </div>
               </div>
 
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700 backdrop-blur-sm">
-                  <div className="flex justify-between items-center mb-4">
-                     <h2 className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle2 className="text-emerald-500"/> Bénéfices Clés</h2>
-                     <button onClick={() => updateProductField('benefits', [...(product.benefits||[]), {title: 'Nouveau', description: 'Description...'}])} className="text-xs flex items-center gap-1 text-emerald-400 hover:text-emerald-300"><Plus size={14}/> Ajouter</button>
-                  </div>
+              {/* Bénéfices - Section compacte collapsible */}
+              <details className="bg-gray-800/30 rounded-xl border border-gray-700 backdrop-blur-sm group" open>
+                  <summary className="p-3 cursor-pointer list-none flex justify-between items-center hover:bg-white/5 transition-colors">
+                     <h2 className="text-sm font-semibold text-gray-400 flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-emerald-500"/> 
+                        Bénéfices ({(product.benefits || []).length})
+                     </h2>
+                     <div className="flex items-center gap-2">
+                        <button 
+                           onClick={(e) => {
+                              e.preventDefault();
+                              updateProductField('benefits', [...(product.benefits||[]), {title: 'Nouveau', description: 'Description...'}]);
+                           }} 
+                           className="text-xs flex items-center gap-1 text-emerald-400 hover:text-emerald-300 px-2 py-1 hover:bg-emerald-500/10 rounded"
+                        >
+                           <Plus size={12}/> Ajouter
+                        </button>
+                        <ChevronDown size={16} className="text-gray-500 group-open:rotate-180 transition-transform" />
+                     </div>
+                  </summary>
                   
-                  <div className="grid gap-4">
+                  <div className="px-3 pb-3 space-y-1.5 max-h-60 overflow-y-auto">
                       {(product.benefits || []).map((benefit, idx) => (
-                         <div key={idx} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50 relative group hover:border-emerald-500/30 transition-colors">
-                             <div className="space-y-2">
-                                 <EditableField 
-                                    value={benefit.title} 
-                                    onSave={async (v) => {
-                                       const newBenefits = [...(product.benefits||[])];
-                                       newBenefits[idx].title = v;
-                                       await updateProductField('benefits', newBenefits);
-                                    }}
-                                    className="font-bold text-emerald-400"
-                                    placeholder="Titre du bénéfice"
-                                 />
-                                 <EditableField 
-                                    value={benefit.description} 
-                                    onSave={async (v) => {
-                                       const newBenefits = [...(product.benefits||[])];
-                                       newBenefits[idx].description = v;
-                                       await updateProductField('benefits', newBenefits);
-                                    }}
-                                    className="text-gray-400 text-sm"
-                                    multiline
-                                    placeholder="Description..."
-                                 />
+                         <div key={idx} className="p-2 bg-gray-800/50 rounded border border-gray-700/50 relative group/item hover:border-emerald-500/30 transition-colors">
+                             <div className="flex items-start gap-2">
+                                <div className="flex-1 min-w-0">
+                                   <EditableField 
+                                      value={benefit.title} 
+                                      onSave={async (v) => {
+                                         const newBenefits = [...(product.benefits||[])];
+                                         newBenefits[idx].title = v;
+                                         await updateProductField('benefits', newBenefits);
+                                      }}
+                                      className="font-semibold text-emerald-400 text-sm"
+                                      placeholder="Titre"
+                                   />
+                                   <EditableField 
+                                      value={benefit.description} 
+                                      onSave={async (v) => {
+                                         const newBenefits = [...(product.benefits||[])];
+                                         newBenefits[idx].description = v;
+                                         await updateProductField('benefits', newBenefits);
+                                      }}
+                                      className="text-gray-400 text-xs line-clamp-1"
+                                      placeholder="Description..."
+                                   />
+                                </div>
+                                <button 
+                                   onClick={() => updateProductField('benefits', (product.benefits||[]).filter((_, i) => i !== idx))}
+                                   className="text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 hover:bg-red-500/10 rounded flex-shrink-0"
+                                >
+                                   <X size={12}/>
+                                </button>
                              </div>
-                             <button 
-                                onClick={() => updateProductField('benefits', (product.benefits||[]).filter((_, i) => i !== idx))}
-                                className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-gray-900 rounded"
-                             >
-                                <X size={14}/>
-                             </button>
                          </div>
                       ))}
                   </div>
-              </div>
+              </details>
            </div>
         </div>
 
@@ -471,19 +501,228 @@ function StrategySection({ product }: { product: Product }) {
               <div className="flex gap-2 mt-4"><button onClick={createPersona} className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 text-sm">Créer</button><button onClick={() => setIsAddingPersona(false)} className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm">Annuler</button></div>
            </div>
         </div>
-      ) : activePersona ? <PersonaDetailView key={activePersona.id} persona={activePersona} updatePersona={updatePersona} productContext={{ name: product.name, description: product.description }} /> : null}
+      ) : activePersona ? <PersonaDetailView key={activePersona.id} persona={activePersona} updatePersona={updatePersona} productContext={{ id: product.id, name: product.name, description: product.description }} /> : null}
     </div>
   );
 }
 
 function PersonaDetailView({ persona, updatePersona, productContext }: { persona: Persona, updatePersona: (p: Persona) => void, productContext: any }) {
+  const router = useRouter();
+  const [selectedLandingPage, setSelectedLandingPage] = useState<LandingPageFull | null>(null);
+  const [loadingLandingPage, setLoadingLandingPage] = useState(false);
+  
   const addMarketingAngle = () => { const newAngle = { id: `temp-angle-${Date.now()}`, name: "Nouvel Angle", adCopies: [{ id: `temp-copy-${Date.now()}`, text: "" }] }; updatePersona({ ...persona, marketingAngles: [...persona.marketingAngles, newAngle] as any }); };
   const updateAngle = (updatedAngle: MarketingAngle) => { const newAngles = persona.marketingAngles.map(a => a.id === updatedAngle.id ? updatedAngle : a); updatePersona({ ...persona, marketingAngles: newAngles }); };
   const removeAngle = (angleId: string) => { if(!confirm("Supprimer ?")) return; const newAngles = persona.marketingAngles.filter(a => a.id !== angleId); updatePersona({ ...persona, marketingAngles: newAngles }); };
+  
+  const landingPages = persona.landingPages || [];
+  
+  const handleViewLandingPage = async (lpId: string) => {
+    setLoadingLandingPage(true);
+    try {
+      const res = await fetch(`/api/landing-pages/${lpId}`);
+      const data = await res.json();
+      setSelectedLandingPage(data);
+    } catch (error) {
+      console.error('Error loading landing page:', error);
+    } finally {
+      setLoadingLandingPage(false);
+    }
+  };
+  
+  const getImages = (section: any): string[] => {
+    if (!section || !section.images) return [];
+    
+    if (typeof section.images === 'string') {
+      try {
+        const parsed = JSON.parse(section.images);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.error('Error parsing images:', error);
+        return [];
+      }
+    }
+    return Array.isArray(section.images) ? section.images : [];
+  };
+  
+  const getSectionImage = (section: any): string | null => {
+    const images = getImages(section);
+    return images.length > 0 ? images[0] : null;
+  };
+  
+  // Helper pour déterminer si une LP est complète (a au moins une image générée)
+  const isLandingPageComplete = (lp: LandingPagePreview) => {
+    if (!lp.sections || lp.sections.length === 0) return false;
+    return lp.sections.some(section => {
+      const images = getImages(section);
+      return images.length > 0;
+    });
+  };
+  
   return (
     <div className="bg-gray-800/40 rounded-xl p-6 border border-gray-700/50 animate-in fade-in duration-300">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
+        {/* Modal Preview Landing Page - Style Mobile */}
+        {selectedLandingPage && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedLandingPage(null)}
+          >
+            <div 
+              className="relative bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden"
+              style={{ width: '375px', maxHeight: '90vh' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header Modal */}
+              <div className="sticky top-0 z-10 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Smartphone size={16} className="text-emerald-500" />
+                  <span className="text-white text-sm font-medium">Aperçu Mobile</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/landing-pages/${selectedLandingPage.id}/edit`}
+                    className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                    title="Éditer"
+                  >
+                    <Edit2 size={14} />
+                  </Link>
+                  <button
+                    onClick={() => setSelectedLandingPage(null)}
+                    className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Content Landing Page */}
+              <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 56px)' }}>
+                {selectedLandingPage.sections && selectedLandingPage.sections.length > 0 ? (
+                  <div className="space-y-0">
+                    {selectedLandingPage.sections.map((section) => {
+                      const images = getImages(section);
+                      if (images.length === 0) return null;
+                      
+                      return (
+                        <div key={section.id} className="relative w-full">
+                          <img
+                            src={images[0]}
+                            alt={section.type}
+                            className="w-full h-auto"
+                            style={{ display: 'block' }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center py-20 text-gray-500">
+                    <div className="text-center">
+                      <FileText size={48} className="mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">Aucune section générée</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
           <div><h3 className="text-2xl font-bold text-emerald-400 mb-2">{persona.name}</h3><p className="text-gray-400 text-base leading-relaxed max-w-2xl">{persona.description}</p></div>
+        </div>
+        
+        {/* Section Landing Pages */}
+        <div className="mb-6 pb-6 border-b border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-2">
+              <FileText size={14} className="text-emerald-500" />
+              Landing Pages ({landingPages.length})
+            </h4>
+            <Link 
+              href={`/landing-pages/create?productId=${productContext.id}&personaId=${persona.id}`}
+              className="text-xs flex items-center gap-1 text-emerald-400 hover:text-emerald-300 px-2 py-1 hover:bg-emerald-500/10 rounded transition-colors"
+            >
+              <Plus size={12}/> Créer une LP
+            </Link>
+          </div>
+          
+          {landingPages.length === 0 ? (
+            <div className="text-center py-6 bg-gray-800/30 rounded-lg border border-dashed border-gray-700">
+              <FileText size={32} className="mx-auto mb-2 text-gray-600" />
+              <p className="text-gray-500 text-sm mb-3">Aucune landing page pour ce persona</p>
+              <Link 
+                href={`/landing-pages/create?productId=${productContext.id}&personaId=${persona.id}`}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 text-xs font-medium transition-colors"
+              >
+                <Plus size={12}/> Créer la première
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {landingPages.map((lp) => (
+                <div 
+                  key={lp.id}
+                  className="bg-gray-800/50 rounded-lg border border-gray-700 hover:border-emerald-500/50 transition-all group overflow-hidden cursor-pointer"
+                  onClick={() => handleViewLandingPage(lp.id)}
+                >
+                  {/* Miniature de la première section */}
+                  <div className="aspect-video bg-gray-900 relative overflow-hidden">
+                    {lp.sections && lp.sections.length > 0 ? (
+                      (() => {
+                        const firstImage = getSectionImage(lp.sections[0]);
+                        return firstImage ? (
+                          <img
+                            src={firstImage}
+                            alt={lp.headline}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <FileText size={32} className="text-gray-600" />
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <FileText size={32} className="text-gray-600" />
+                      </div>
+                    )}
+                    {/* Badge Status */}
+                    <div className="absolute top-2 right-2">
+                      <span className={`text-xs px-2 py-0.5 rounded backdrop-blur-sm ${
+                        isLandingPageComplete(lp)
+                          ? 'bg-green-500/80 text-white' 
+                          : 'bg-yellow-600/80 text-white'
+                      }`}>
+                        {isLandingPageComplete(lp) ? 'Prêt' : 'En cours'}
+                      </span>
+                    </div>
+                    {/* Overlay hover */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="bg-emerald-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
+                        <Eye size={16} />
+                        Voir
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Info */}
+                  <div className="p-3">
+                    <h5 className="text-white font-medium text-sm line-clamp-2 mb-2">{lp.headline}</h5>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Layers size={12} />
+                        {lp.sections?.length || 0}
+                      </span>
+                      <span>•</span>
+                      <span>{new Date(lp.createdAt).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="space-y-6">
           <h4 className="text-sm uppercase tracking-wider text-gray-500 font-semibold mb-4">Angles Marketing</h4>

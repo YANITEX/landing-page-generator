@@ -8,6 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const includeLandingPages = searchParams.get('includeLandingPages') === 'true';
+    
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -20,7 +23,29 @@ export async function GET(
               include: {
                 adCopies: true
               }
-            }
+            },
+            ...(includeLandingPages && {
+              landingPages: {
+                select: {
+                  id: true,
+                  headline: true,
+                  status: true,
+                  createdAt: true,
+                  sections: {
+                    where: {
+                      isActive: true
+                    },
+                    select: { 
+                      id: true,
+                      type: true,
+                      images: true
+                    },
+                    orderBy: { order: 'asc' }
+                  }
+                },
+                orderBy: { createdAt: 'desc' }
+              }
+            })
           }
         },
         landingPages: {
