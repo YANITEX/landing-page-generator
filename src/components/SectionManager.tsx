@@ -34,6 +34,14 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
+// Fonction helper pour normaliser les sections de l'API
+function normalizeSections(sections: any[]): Section[] {
+  return sections.map(section => ({
+    ...section,
+    images: getImages(section)
+  }));
+}
+
 // Fonction helper pour gérer les images (JSON string ou array)
 function getImages(section: any): string[] {
   if (typeof section.images === 'string') {
@@ -100,7 +108,7 @@ export default function SectionManager({ landingPageId, sections, onSectionsUpda
   );
 
   useEffect(() => {
-    setLocalSections(sections);
+    setLocalSections(normalizeSections(sections));
   }, [sections]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -137,16 +145,17 @@ export default function SectionManager({ landingPageId, sections, onSectionsUpda
       });
 
       if (response.ok) {
-        const updatedSections = await response.json();
+        const updatedSections = normalizeSections(await response.json());
+        setLocalSections(updatedSections);
         onSectionsUpdate(updatedSections);
       } else {
         // Rétablir l'ordre précédent en cas d'erreur
-        setLocalSections(sections);
+        setLocalSections(normalizeSections(sections));
         console.error('Erreur lors de la réorganisation');
       }
     } catch (error) {
       console.error('Erreur lors de la réorganisation:', error);
-      setLocalSections(sections);
+      setLocalSections(normalizeSections(sections));
     } finally {
       setIsReordering(false);
     }
@@ -184,7 +193,7 @@ export default function SectionManager({ landingPageId, sections, onSectionsUpda
         // Marquer la section comme en cours de génération
         const updatedSections = localSections.map(section =>
           section.id === sectionId 
-            ? { ...section, generationStatus: 'generating', images: JSON.stringify([]) }
+            ? { ...section, generationStatus: 'generating', images: [] }
             : section
         );
         setLocalSections(updatedSections);
