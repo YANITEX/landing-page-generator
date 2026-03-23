@@ -203,7 +203,6 @@ export default function CreateProductPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productName: formData.productName,
-          headline: formData.headline,
           description: formData.description,
           benefits: formData.benefits,
           language: formData.language,
@@ -335,7 +334,6 @@ export default function CreateProductPage() {
           name: formData.productName,
           description: formData.description,
           images: imageUrls,
-          headline: formData.headline,
           currency: formData.currency,
           priceOld: formData.priceOld,
           priceNew: formData.priceNew,

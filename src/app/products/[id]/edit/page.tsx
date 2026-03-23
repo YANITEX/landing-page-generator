@@ -166,7 +166,6 @@ export default function EditProductPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productName: formData.productName,
-          headline: formData.headline,
           description: formData.description,
           benefits: formData.benefits,
           language: formData.language,
@@ -318,7 +317,6 @@ export default function EditProductPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.productName,
-          headline: formData.headline,
           description: formData.description,
           currency: formData.currency,
           priceOld: formData.priceOld,
