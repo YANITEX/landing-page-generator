@@ -132,9 +132,7 @@ export default function CreateProductPage() {
         }),
       });
       const data = await res.json();
-      if (data.headline) {
-        setFormData({ ...formData, headline: data.headline });
-      }
+      // Process response if needed
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -274,7 +272,6 @@ export default function CreateProductPage() {
         setFormData((prev) => ({
           ...prev,
           productName: data.productName || prev.productName,
-          headline: data.headline || prev.headline,
           description: data.description || prev.description,
           benefits: Array.isArray(data.benefits) ? data.benefits : prev.benefits,
           adCopies: Array.isArray(data.adCopies) ? data.adCopies : prev.adCopies,

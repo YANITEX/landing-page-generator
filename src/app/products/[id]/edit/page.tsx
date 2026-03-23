@@ -238,7 +238,6 @@ export default function EditProductPage() {
         setFormData((prev) => ({
           ...prev,
           productName: data.productName || prev.productName,
-          headline: data.headline || prev.headline,
           description: data.description || prev.description,
           benefits: Array.isArray(data.benefits) ? data.benefits : prev.benefits,
           adCopies: [], // Clear legacy
