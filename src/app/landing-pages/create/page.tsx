@@ -455,11 +455,6 @@ export default function CreateLandingPage() {
                                             </div>
                                             {/* Nom du produit */}
                                             <h3 className="font-semibold text-white text-sm mb-1 truncate">{product.name}</h3>
-                                            
-                                            {/* Headline si disponible */}
-                                            {product.headline && (
-                                                <p className="text-xs text-gray-400 line-clamp-2">{product.headline}</p>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
