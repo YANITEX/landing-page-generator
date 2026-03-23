@@ -273,8 +273,6 @@ export default function CreateProductPage() {
           ...prev,
           productName: data.productName || prev.productName,
           description: data.description || prev.description,
-          benefits: Array.isArray(data.benefits) ? data.benefits : prev.benefits,
-          adCopies: Array.isArray(data.adCopies) ? data.adCopies : prev.adCopies,
           persona: data.persona || undefined, // Store the structured persona
         }));
       } else {

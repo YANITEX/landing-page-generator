@@ -239,7 +239,6 @@ export default function EditProductPage() {
           ...prev,
           productName: data.productName || prev.productName,
           description: data.description || prev.description,
-          benefits: Array.isArray(data.benefits) ? data.benefits : prev.benefits,
           adCopies: [], // Clear legacy
           personas: data.persona ? [data.persona] : prev.personas
         }));
@@ -257,7 +256,7 @@ export default function EditProductPage() {
   const handleRemoveAdCopy = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      adCopies: prev.adCopies.filter((_, i) => i !== index),
+      adCopies: formData.adCopies.filter((_, i) => i !== index),
     }));
   };
 
@@ -267,34 +266,7 @@ export default function EditProductPage() {
     setFormData(prev => ({ ...prev, adCopies: newAdCopies }));
   };
 
-  const handleBenefitChange = (
-    index: number,
-    field: 'title' | 'description',
-    value: string
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      benefits: prev.benefits.map((b, i) =>
-        i === index ? { ...b, [field]: value } : b
-      ),
-    }));
-  };
 
-  const addBenefit = () => {
-    if (formData.benefits.length < 6) {
-      setFormData(prev => ({
-        ...prev,
-        benefits: [...prev.benefits, { title: '', description: '' }],
-      }));
-    }
-  };
-
-  const removeBenefit = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      benefits: prev.benefits.filter((_, i) => i !== index),
-    }));
-  };
 
   const handleSave = async () => {
     setError(null);
