@@ -204,7 +204,6 @@ export default function CreateProductPage() {
         body: JSON.stringify({
           productName: formData.productName,
           description: formData.description,
-          benefits: formData.benefits,
           language: formData.language,
         }),
       });
@@ -341,7 +340,6 @@ export default function CreateProductPage() {
           phone: formData.phone,
           whatsapp: formData.whatsapp,
           deliveryInfo: formData.deliveryInfo,
-          benefits: formData.benefits,
           adCopies: formData.adCopies.length > 0 ? formData.adCopies : undefined,
           persona: formData.persona, // Send the structured persona to backend
         }),

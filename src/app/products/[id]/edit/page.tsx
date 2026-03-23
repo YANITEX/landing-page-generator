@@ -167,7 +167,6 @@ export default function EditProductPage() {
         body: JSON.stringify({
           productName: formData.productName,
           description: formData.description,
-          benefits: formData.benefits,
           language: formData.language,
         }),
       });
@@ -325,7 +324,6 @@ export default function EditProductPage() {
           phone: formData.phone,
           whatsapp: formData.whatsapp,
           deliveryInfo: formData.deliveryInfo,
-          benefits: formData.benefits,
           adCopies: formData.adCopies.length > 0 ? formData.adCopies : undefined,
           personas: formData.personas && formData.personas.length > 0 ? formData.personas : undefined,
           images: imageUrls.length > 0 ? imageUrls : undefined,
