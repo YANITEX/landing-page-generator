@@ -4,12 +4,13 @@ import { prisma } from '@/lib/prisma';
 // GET - Récupérer toutes les sections d'une landing page
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const sections = await prisma.section.findMany({
       where: {
-        landingPageId: params.id
+        landingPageId: id
       },
       orderBy: {
         order: 'asc'
@@ -29,9 +30,10 @@ export async function GET(
 // POST - Créer une nouvelle section
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { type, title, content, order } = body;
 
@@ -39,7 +41,7 @@ export async function POST(
     let sectionOrder = order;
     if (sectionOrder === undefined) {
       const maxOrderSection = await prisma.section.findFirst({
-        where: { landingPageId: params.id },
+        where: { landingPageId: id },
         orderBy: { order: 'desc' }
       });
       sectionOrder = (maxOrderSection?.order || 0) + 1;
@@ -52,7 +54,7 @@ export async function POST(
         content,
         images: JSON.stringify([]), // Stocker images comme JSON string pour SQLite
         order: sectionOrder,
-        landingPageId: params.id,
+        landingPageId: id,
         generationStatus: 'pending'
       }
     });

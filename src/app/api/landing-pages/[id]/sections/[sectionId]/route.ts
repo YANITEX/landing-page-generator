@@ -4,16 +4,17 @@ import { prisma } from '@/lib/prisma';
 // PUT - Mettre à jour une section
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; sectionId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
+    const { id, sectionId } = await params;
     const body = await request.json();
     const { type, title, content, order, isActive } = body;
 
     const section = await prisma.section.update({
       where: {
-        id: params.sectionId,
-        landingPageId: params.id
+        id: sectionId,
+        landingPageId: id
       },
       data: {
         ...(type !== undefined && { type }),
@@ -38,13 +39,14 @@ export async function PUT(
 // DELETE - Supprimer une section
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; sectionId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
+    const { id, sectionId } = await params;
     await prisma.section.delete({
       where: {
-        id: params.sectionId,
-        landingPageId: params.id
+        id: sectionId,
+        landingPageId: id
       }
     });
 
@@ -61,15 +63,16 @@ export async function DELETE(
 // POST - Régénérer les images d'une section
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; sectionId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
+    const { id, sectionId } = await params;
     const { action } = await request.json();
 
     if (action === 'regenerate') {
       // Récupérer la section et la landing page
       const section = await prisma.section.findUnique({
-        where: { id: params.sectionId },
+        where: { id: sectionId },
         include: {
           landingPage: {
             include: {
@@ -96,7 +99,7 @@ export async function POST(
 
       // Marquer comme en cours de génération
       await prisma.section.update({
-        where: { id: params.sectionId },
+        where: { id: sectionId },
         data: { 
           generationStatus: 'generating',
           images: JSON.stringify([]),
@@ -113,7 +116,7 @@ export async function POST(
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          sectionId: params.sectionId,
+          sectionId: sectionId,
           prompt: section.prompt || `Créer une section ${section.type}`,
           productImageUrl: productImageUrl,
           // Utiliser des valeurs par défaut pour la régénération
