@@ -342,8 +342,8 @@ export default function EditProductPage() {
     );
   }
 
-  const steps = ['Images', 'Informations', 'Bénéfices', 'Contact & CTA', 'Ad Copies'];
-  const stepsCount = 5;
+  const steps = ['Images', 'Informations', 'Contact & CTA', 'Ad Copies'];
+  const stepsCount = 4;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a1520] to-[#0f1822] p-8">
@@ -586,55 +586,8 @@ export default function EditProductPage() {
           </div>
         )}
 
-        {/* Step 3: Bénéfices */}
+        {/* Step 3: Contact & CTA */}
         {step === 3 && (
-          <div className="space-y-4">
-            {formData.benefits.map((benefit, idx) => (
-              <div key={idx} className="p-4 border border-gray-700 rounded-lg space-y-3">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm text-gray-400">Bénéfice {idx + 1}</p>
-                  <button
-                    onClick={() => removeBenefit(idx)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={benefit.title}
-                  onChange={(e) =>
-                    handleBenefitChange(idx, 'title', e.target.value)
-                  }
-                  maxLength={50}
-                  placeholder="Titre du bénéfice"
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none text-sm"
-                />
-                <textarea
-                  value={benefit.description}
-                  onChange={(e) =>
-                    handleBenefitChange(idx, 'description', e.target.value)
-                  }
-                  maxLength={150}
-                  placeholder="Description du bénéfice"
-                  rows={2}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none text-sm resize-none"
-                />
-              </div>
-            ))}
-            {formData.benefits.length < 6 && (
-              <button
-                onClick={addBenefit}
-                className="w-full py-2 px-4 border-2 border-dashed border-gray-600 text-gray-400 hover:border-emerald-500 hover:text-emerald-400 rounded-lg transition-colors text-sm font-medium"
-              >
-                + Ajouter un bénéfice
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Step 4: Contact & CTA */}
-        {step === 4 && (
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-gray-300 mb-2">
@@ -689,8 +642,8 @@ export default function EditProductPage() {
           </div>
         )}
 
-        {/* Step 5: Ad Copies & Strategy */}
-        {step === 5 && (
+        {/* Step 4: Ad Copies & Strategy */}
+        {step === 4 && (
           <div className="space-y-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
