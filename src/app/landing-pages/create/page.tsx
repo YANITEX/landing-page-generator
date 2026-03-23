@@ -28,7 +28,6 @@ type Product = {
   id: string;
   name: string;
   images: { url: string; isPrimary: boolean }[];
-  headline?: string;
 };
 
 type Persona = {
@@ -37,7 +36,7 @@ type Persona = {
   description: string | null;
 };
 
-type SectionType = 'hero' | 'problem' | 'solution' | 'benefits' | 'social-proof' | 'how-it-works' | 'faq' | 'cta';
+type SectionType = 'hero' | 'benefits' | 'social-proof' | 'features' | 'before-after' | 'demo' | 'comparison' | 'guarantees' | 'urgency' | 'faq' | 'cta';
 
 type Section = {
   id: string;
@@ -45,15 +44,18 @@ type Section = {
   prompt: string; // JSON string
 };
 
-const DEFAULT_SECTIONS: Record<SectionType, object> = {
-  hero: { focus: "hero usage", style: "cinematic", mood: "exciting" },
-  problem: { focus: "user pain point", emotion: "frustrated", setting: "lifestyle" },
-  solution: { focus: "product solving problem", emotion: "relief", setting: "studio" },
-  benefits: { focus: "key features", style: "minimalist", layout: "grid" },
-  'social-proof': { focus: "happy customers", style: "authentic", count: 3 },
-  'how-it-works': { focus: "step by step", style: "instructional", steps: 3 },
-  faq: { focus: "questions", style: "clean" },
-  cta: { focus: "product beauty shot", style: "persuasive", background: "solid" }
+const DEFAULT_SECTIONS: Record<SectionType, string> = {
+  hero: "Professional e-commerce hero banner showcasing this product, clean minimalist background with soft gradient, product prominently displayed in center with dramatic lighting, modern lifestyle setting, high-end commercial photography style, 8k quality, ultra realistic",
+  benefits: "Infographic style image showing this product with 3 icon-based benefit highlights, clean white background, modern flat design icons, professional product photography combined with graphic elements, commercial advertising style, bright and appealing",
+  'social-proof': "Lifestyle photo of happy customer using this product in natural environment, genuine smile, candid moment, warm natural lighting, authentic testimonial scene, professional photography, relatable and trustworthy atmosphere",
+  features: "Split-screen composition showing this product features, left side: product close-up details, right side: person benefiting from product, modern commercial style, clean background, professional lighting, feature highlight with subtle graphic overlays",
+  'before-after': "Before and after comparison image, split down the middle, left side: problem scenario without this product, right side: improved situation with product, dramatic contrast, realistic photography, clear visual transformation, professional commercial quality",
+  demo: "Action shot of this product being used, hands interacting with product, dynamic angle, step-by-step usage demonstration, clean studio lighting, professional product photography, detailed and instructional, high clarity",
+  comparison: "Side-by-side comparison layout, this product on one side looking superior with checkmarks, competitor/old method on other side with X marks, clean infographic style, professional product photography, modern design elements, clear visual hierarchy",
+  guarantees: "Trust badges and security icons surrounding this product, premium shields and certification symbols, professional e-commerce style, clean white/blue background, reassuring and credible atmosphere, modern graphic design",
+  urgency: "this product with countdown timer overlay, limited stock visual indicator, urgent but professional design, warm spotlight on product, clean background, modern e-commerce promotional style, sense of exclusivity",
+  faq: "Friendly customer service representative with headset next to this product, welcoming expression, professional office/studio setting, clean background, approachable and helpful atmosphere, high quality commercial photography",
+  cta: "Eye-catching promotional image of this product with bold call-to-action energy, product elevated on podium or spotlight, celebratory atmosphere, premium presentation, clean background with subtle geometric shapes, irresistible commercial appeal"
 };
 
 export default function CreateLandingPage() {
@@ -87,7 +89,12 @@ export default function CreateLandingPage() {
     // Le personaId sera défini après le chargement des personas
   }, [productIdFromUrl]);
 
-  // Step 2: Palette
+  // Step 2: Langue & Pays
+  const [language, setLanguage] = useState('EN');
+  const [country, setCountry] = useState('DZ');
+
+  // Step 3: Palette
+  const [skipPalette, setSkipPalette] = useState(true); // Par défaut, utiliser "auto"
   const [palette, setPalette] = useState({
     primary: '#000000',
     secondary: '#333333',
@@ -96,12 +103,12 @@ export default function CreateLandingPage() {
   });
   const [isExtractingPalette, setIsExtractingPalette] = useState(false);
 
-  // Step 3: Sections
+  // Step 4: Sections
   const [sections, setSections] = useState<Section[]>([
-    { id: 'hero-1', type: 'hero', prompt: JSON.stringify(DEFAULT_SECTIONS.hero, null, 2) },
-    { id: 'problem-1', type: 'problem', prompt: JSON.stringify(DEFAULT_SECTIONS.problem, null, 2) },
-    { id: 'solution-1', type: 'solution', prompt: JSON.stringify(DEFAULT_SECTIONS.solution, null, 2) },
-    { id: 'cta-1', type: 'cta', prompt: JSON.stringify(DEFAULT_SECTIONS.cta, null, 2) },
+    { id: 'hero-1', type: 'hero', prompt: DEFAULT_SECTIONS.hero },
+    { id: 'benefits-1', type: 'benefits', prompt: DEFAULT_SECTIONS.benefits },
+    { id: 'social-proof-1', type: 'social-proof', prompt: DEFAULT_SECTIONS['social-proof'] },
+    { id: 'cta-1', type: 'cta', prompt: DEFAULT_SECTIONS.cta },
   ]);
 
   // Fetch Products
@@ -134,8 +141,7 @@ export default function CreateLandingPage() {
       setFilteredProducts(products);
     } else {
       const filtered = products.filter(product => 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.headline && product.headline.toLowerCase().includes(searchQuery.toLowerCase()))
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredProducts(filtered);
     }
@@ -208,7 +214,7 @@ export default function CreateLandingPage() {
     const newSection: Section = {
         id: `${type}-${Date.now()}`,
         type,
-        prompt: JSON.stringify(DEFAULT_SECTIONS[type], null, 2)
+        prompt: DEFAULT_SECTIONS[type]
     };
     setSections([...sections, newSection]);
   };
@@ -234,13 +240,27 @@ export default function CreateLandingPage() {
   const handleGenerateAll = async () => {
     setIsLoading(true);
     try {
+        // Récupérer les informations du produit
+        const product = products.find(p => p.id === selectedProductId);
+        if (!product) {
+          alert('Produit non trouvé');
+          setIsLoading(false);
+          return;
+        }
+
         // 1. Create LP Structure
         const res = await fetch('/api/landing-pages', {
             method: 'POST',
             body: JSON.stringify({
-                productId: selectedProductId,
                 personaId: selectedPersonaId,
-                palette,
+                headline: product.name, // Utiliser le nom du produit comme headline par défaut
+                price: 0, // À définir
+                oldPrice: null,
+                currency: 'DA',
+                ctaText: 'Commander maintenant',
+                palette: skipPalette ? 'auto' : palette,
+                language,
+                country,
                 sections: sections.map(s => ({ type: s.type, prompt: s.prompt }))
             }),
             headers: { 'Content-Type': 'application/json' }
@@ -248,22 +268,8 @@ export default function CreateLandingPage() {
         const landingPage = await res.json();
 
         if (landingPage.id) {
-             // 2. Trigger Image Generation for each section in parallel
-             const product = products.find(p => p.id === selectedProductId);
-             const mainImage = product?.images.find(img => img.isPrimary)?.url || product?.images[0]?.url;
-             
-             landingPage.sections.forEach((section: any) => {
-                 fetch('/api/ai/generate-section-image', {
-                     method: 'POST',
-                     body: JSON.stringify({
-                         sectionId: section.id,
-                         prompt: section.prompt,
-                         productImageUrl: mainImage
-                     }),
-                     headers: { 'Content-Type': 'application/json' }
-                 });
-             });
-
+             // La génération des images est déjà déclenchée automatiquement par l'API backend
+             // Rediriger vers la page de prévisualisation
              router.push(`/landing-pages/${landingPage.id}`);
         }
 
@@ -288,7 +294,7 @@ export default function CreateLandingPage() {
                   {isActive ? <Check size={16} /> : num}
               </div>
               <span className={`text-sm font-medium ${isActive ? 'text-white' : 'text-gray-500'}`}>{title}</span>
-              {num < 3 && <div className={`h-0.5 w-12 mx-2 ${isActive ? 'bg-emerald-500' : 'bg-[#1a2c3d]'}`}></div>}
+              {num < 4 && <div className={`h-0.5 w-12 mx-2 ${isActive ? 'bg-emerald-500' : 'bg-[#1a2c3d]'}`}></div>}
           </div>
       );
   }
@@ -310,8 +316,9 @@ export default function CreateLandingPage() {
             {/* Steps Indicator */}
             <div className="flex items-center justify-center p-6 bg-[#0f1d2a] border border-gray-800 rounded-2xl">
                 <ProgressStep num={1} title="Cible & Produit" current={step} />
-                <ProgressStep num={2} title="Design & Couleurs" current={step} />
-                <ProgressStep num={3} title="Structure & Contenu" current={step} />
+                <ProgressStep num={2} title="Langue & Pays" current={step} />
+                <ProgressStep num={3} title="Design & Couleurs" current={step} />
+                <ProgressStep num={4} title="Structure" current={step} />
             </div>
 
             {step === 1 && (
@@ -580,63 +587,249 @@ export default function CreateLandingPage() {
                 </div>
             )}
 
+            {/* Étape 2: Langue & Pays */}
             {step === 2 && (
                 <div className="space-y-6 bg-[#0f1d2a] p-8 rounded-2xl border border-gray-800 animate-in fade-in slide-in-from-right-4 duration-500">
-                    <div className="flex justify-between items-start mb-6">
-                         <div className="flex items-center gap-3">
-                            <div className="p-3 bg-pink-500/10 rounded-lg text-pink-400">
-                                <Palette size={24} />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-semibold text-white">Palette de Couleurs</h2>
-                                <p className="text-sm text-gray-400">Définissez l'ambiance visuelle de votre page.</p>
-                            </div>
+                    {/* En-tête */}
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-lg">
+                            <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                            </svg>
                         </div>
-                        <button 
-                            onClick={handleExtractPalette}
-                            disabled={isExtractingPalette}
-                            className="flex items-center gap-2 text-sm bg-gradient-to-r from-pink-500 to-rose-600 text-white px-4 py-2 rounded-lg hover:shadow-lg hover:shadow-pink-500/30 transition-all font-medium"
-                        >
-                            {isExtractingPalette ? <Loader2 className="animate-spin" size={16} /> : <Wand2 size={16} />}
-                            IA Magic Palette
-                        </button>
+                        <div>
+                            <h2 className="text-xl font-semibold text-white">Localisation & Langue</h2>
+                            <p className="text-sm text-gray-400">Définissez la langue et le pays cible de votre landing page</p>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {(['primary', 'secondary', 'accent', 'background'] as const).map(colorKey => (
-                            <div key={colorKey} className="space-y-3 bg-[#1a2c3d] p-4 rounded-xl border border-gray-700">
-                                <label className="text-xs uppercase font-bold text-gray-400">{colorKey}</label>
-                                <div className="flex gap-3">
-                                    <div 
-                                        className="w-12 h-12 rounded-lg border border-gray-600 shadow-inner"
-                                        style={{ backgroundColor: palette[colorKey] }}
-                                    />
-                                    <div className="flex-1">
-                                         <input 
-                                            type="text" 
-                                            value={palette[colorKey]}
-                                            onChange={(e) => setPalette({...palette, [colorKey]: e.target.value})}
-                                            className="w-full h-full p-2 bg-[#0a1520] border border-gray-700 rounded text-white font-mono text-sm focus:border-emerald-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
+                    {/* Langue */}
+                    <div className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 p-6 rounded-xl border border-blue-500/20">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-blue-500/20 rounded-lg">
+                                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                                </svg>
                             </div>
-                        ))}
+                            <div className="flex-1">
+                                <label className="block text-base font-semibold text-white mb-1">Langue du contenu</label>
+                                <p className="text-xs text-gray-400">L'IA générera tous les textes et images dans cette langue</p>
+                            </div>
+                        </div>
+                        <select 
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
+                            className="w-full p-4 bg-[#0a1520] border border-gray-700 rounded-lg text-white font-medium focus:border-blue-500 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        >
+                            <option value="EN">🇬🇧 English</option>
+                            <option value="FR">🇫🇷 Français</option>
+                            <option value="AR">🇩🇿 العربية (Arabe)</option>
+                            <option value="ES">🇪🇸 Español</option>
+                            <option value="DE">🇩🇪 Deutsch</option>
+                            <option value="IT">🇮🇹 Italiano</option>
+                        </select>
                     </div>
-                    
-                    {/* Preview Area */}
-                    <div className="rounded-xl border border-gray-700 p-8 flex flex-col items-center justify-center gap-6 mt-8 shadow-inner" style={{ backgroundColor: palette.background }}>
-                         <h3 className="text-2xl font-bold" style={{ color: palette.primary }}>Titre Principal Exemple</h3>
-                         <div className="flex gap-4">
-                            <div className="px-6 py-3 rounded-lg text-white font-bold shadow-lg" style={{ backgroundColor: palette.primary }}>Bouton Principal</div>
-                            <div className="px-6 py-3 rounded-lg text-white font-bold shadow-lg" style={{ backgroundColor: palette.secondary }}>Secondaire</div>
-                         </div>
-                         <p className="font-medium" style={{ color: palette.accent }}>Texte d'accentuation important</p>
+
+                    {/* Pays */}
+                    <div className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 p-6 rounded-xl border border-green-500/20">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-green-500/20 rounded-lg">
+                                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-base font-semibold text-white mb-1">Pays cible</label>
+                                <p className="text-xs text-gray-400">Adaptez le contenu aux spécificités locales</p>
+                            </div>
+                        </div>
+                        <select 
+                            value={country}
+                            onChange={(e) => setCountry(e.target.value)}
+                            className="w-full p-4 bg-[#0a1520] border border-gray-700 rounded-lg text-white font-medium focus:border-green-500 outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                        >
+                            <option value="DZ">🇩🇿 Algérie</option>
+                            <option value="FR">🇫🇷 France</option>
+                            <option value="MA">🇲🇦 Maroc</option>
+                            <option value="TN">🇹🇳 Tunisie</option>
+                            <option value="US">🇺🇸 États-Unis</option>
+                            <option value="GB">🇬🇧 Royaume-Uni</option>
+                            <option value="CA">🇨🇦 Canada</option>
+                            <option value="DE">🇩🇪 Allemagne</option>
+                            <option value="ES">🇪🇸 Espagne</option>
+                            <option value="IT">🇮🇹 Italie</option>
+                            <option value="BE">🇧🇪 Belgique</option>
+                            <option value="CH">🇨🇭 Suisse</option>
+                        </select>
+                    </div>
+
+                    {/* Boutons de navigation */}
+                    <div className="flex justify-between pt-6">
+                        <button 
+                            onClick={() => setStep(1)}
+                            className="flex items-center gap-2 px-6 py-3 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                        >
+                            <ChevronLeft size={18} /> Retour
+                        </button>
+                        <button 
+                            onClick={() => setStep(3)}
+                            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-3 rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all font-semibold"
+                        >
+                            Suivant <ChevronRight size={18} />
+                        </button>
                     </div>
                 </div>
             )}
 
+            {/* Étape 3: Design & Couleurs */}
             {step === 3 && (
+                <div className="space-y-6 bg-[#0f1d2a] p-8 rounded-2xl border border-gray-800 animate-in fade-in-from-right-4 duration-500">
+                    {/* En-tête */}
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-lg text-pink-400">
+                            <Palette size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-semibold text-white">Design & Couleurs</h2>
+                            <p className="text-sm text-gray-400">Personnalisez le style visuel de votre landing page</p>
+                        </div>
+                    </div>
+
+                    {/* Palette de couleurs - Section optionnelle */}
+                    <div className="bg-[#1a2c3d] rounded-xl border border-gray-700 overflow-hidden">
+                        {/* Header avec toggle */}
+                        <div className="p-5 border-b border-gray-700">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg transition-colors ${
+                                        skipPalette ? 'bg-gray-700/50' : 'bg-pink-500/20'
+                                    }`}>
+                                        <Palette size={20} className={skipPalette ? 'text-gray-400' : 'text-pink-400'} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-semibold text-white">Palette de couleurs personnalisée</h3>
+                                        <p className="text-xs text-gray-400">Optionnel - L'IA choisira automatiquement si non défini</p>
+                                    </div>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={!skipPalette}
+                                        onChange={(e) => setSkipPalette(!e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-500/50 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-pink-500 peer-checked:to-rose-600"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Contenu de la palette (affiché si skipPalette = false) */}
+                        {!skipPalette && (
+                            <div className="p-6 space-y-6">
+                                {/* Bouton Magic Palette */}
+                                <button 
+                                    onClick={handleExtractPalette}
+                                    disabled={isExtractingPalette}
+                                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:shadow-pink-500/30 transition-all font-medium disabled:opacity-50"
+                                >
+                                    {isExtractingPalette ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={18} />
+                                            Extraction en cours...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wand2 size={18} />
+                                            Extraire depuis l'image produit
+                                        </>
+                                    )}
+                                </button>
+
+                                {/* Grille de couleurs */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {(['primary', 'secondary', 'accent', 'background'] as const).map(colorKey => (
+                                        <div key={colorKey} className="space-y-2">
+                                            <label className="text-xs uppercase font-bold text-gray-400 tracking-wide">
+                                                {colorKey === 'primary' && '🎨 Primaire'}
+                                                {colorKey === 'secondary' && '🎨 Secondaire'}
+                                                {colorKey === 'accent' && '✨ Accent'}
+                                                {colorKey === 'background' && '🖼️ Fond'}
+                                            </label>
+                                            <div className="relative">
+                                                {/* Carré de couleur cliquable avec color picker natif */}
+                                                <label 
+                                                    htmlFor={`color-picker-${colorKey}`}
+                                                    className="block w-full h-24 rounded-lg border-2 border-gray-600 shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden group"
+                                                    style={{ backgroundColor: palette[colorKey] }}
+                                                >
+                                                    {/* Overlay hover */}
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                        <svg className="w-8 h-8 text-white/0 group-hover:text-white/80 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                                        </svg>
+                                                    </div>
+                                                    {/* Color picker caché */}
+                                                    <input 
+                                                        id={`color-picker-${colorKey}`}
+                                                        type="color" 
+                                                        value={palette[colorKey]}
+                                                        onChange={(e) => setPalette({...palette, [colorKey]: e.target.value})}
+                                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                                        title="Cliquez pour choisir une couleur"
+                                                    />
+                                                </label>
+                                                {/* Input texte pour code hex */}
+                                                <input 
+                                                    type="text" 
+                                                    value={palette[colorKey]}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        // Valider format hex
+                                                        if (/^#[0-9A-Fa-f]{0,6}$/.test(value) || value === '') {
+                                                            setPalette({...palette, [colorKey]: value});
+                                                        }
+                                                    }}
+                                                    placeholder="#000000"
+                                                    className="mt-2 w-full p-2 bg-[#0a1520] border border-gray-700 rounded text-white font-mono text-xs text-center focus:border-pink-500 outline-none uppercase tracking-wider"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {/* Preview */}
+                                <div className="rounded-lg border border-gray-600 p-6 flex flex-col items-center justify-center gap-4 shadow-inner" style={{ backgroundColor: palette.background }}>
+                                     <h3 className="text-xl font-bold text-center" style={{ color: palette.primary }}>Aperçu du design</h3>
+                                     <div className="flex gap-3">
+                                        <div className="px-5 py-2.5 rounded-lg text-white font-semibold shadow-md text-sm" style={{ backgroundColor: palette.primary }}>Bouton Principal</div>
+                                        <div className="px-5 py-2.5 rounded-lg text-white font-semibold shadow-md text-sm" style={{ backgroundColor: palette.secondary }}>Secondaire</div>
+                                     </div>
+                                     <p className="font-medium" style={{ color: palette.accent }}>Texte d'accentuation important</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Boutons de navigation */}
+                    <div className="flex justify-between pt-6">
+                        <button 
+                            onClick={() => setStep(2)}
+                            className="flex items-center gap-2 px-6 py-3 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                        >
+                            <ChevronLeft size={18} /> Retour
+                        </button>
+                        <button 
+                            onClick={() => setStep(4)}
+                            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-3 rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all font-semibold"
+                        >
+                            Suivant <ChevronRight size={18} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Étape 4: Structure & Sections */}
+            {step === 4 && (
                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                      <div className="bg-[#0f1d2a] p-8 rounded-2xl border border-gray-800">
                         <div className="flex items-center gap-3 mb-6">
@@ -724,7 +917,7 @@ export default function CreateLandingPage() {
                  </div>
             )}
 
-            {/* Sticky Footer pour l'étape 2 */}
+            {/* Sticky Footer pour l'étape 2 - Langue & Pays */}
             {step === 2 && (
                 <div className="fixed bottom-0 left-64 right-0 bg-[#0a1520]/95 backdrop-blur-sm border-t border-gray-800 p-4 z-10">
                     <div className="max-w-5xl mx-auto flex justify-between items-center">
@@ -735,9 +928,11 @@ export default function CreateLandingPage() {
                             <ChevronLeft size={18} /> Retour
                         </button>
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-pink-400 bg-pink-500/10 px-3 py-2 rounded-lg border border-pink-500/30">
-                                <Palette className="w-4 h-4" />
-                                <span className="text-sm font-medium">Étape 2/3 - Design & Couleurs</span>
+                            <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/30">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                                </svg>
+                                <span className="text-sm font-medium">Étape 2/4 - Langue & Pays</span>
                             </div>
                             <button 
                                 onClick={() => setStep(3)}
@@ -750,7 +945,7 @@ export default function CreateLandingPage() {
                 </div>
             )}
 
-            {/* Sticky Footer pour l'étape 3 */}
+            {/* Sticky Footer pour l'étape 3 - Design & Couleurs */}
             {step === 3 && (
                 <div className="fixed bottom-0 left-64 right-0 bg-[#0a1520]/95 backdrop-blur-sm border-t border-gray-800 p-4 z-10">
                     <div className="max-w-5xl mx-auto flex justify-between items-center">
@@ -761,9 +956,35 @@ export default function CreateLandingPage() {
                             <ChevronLeft size={18} /> Retour
                         </button>
                         <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-pink-400 bg-pink-500/10 px-3 py-2 rounded-lg border border-pink-500/30">
+                                <Palette className="w-4 h-4" />
+                                <span className="text-sm font-medium">Étape 3/4 - Design & Couleurs</span>
+                            </div>
+                            <button 
+                                onClick={() => setStep(4)}
+                                className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-3 rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all font-semibold"
+                            >
+                                Suivant <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Sticky Footer pour l'étape 4 */}
+            {step === 4 && (
+                <div className="fixed bottom-0 left-64 right-0 bg-[#0a1520]/95 backdrop-blur-sm border-t border-gray-800 p-4 z-10">
+                    <div className="max-w-5xl mx-auto flex justify-between items-center">
+                        <button 
+                            onClick={() => setStep(3)}
+                            className="flex items-center gap-2 px-6 py-3 border border-gray-700 hover:bg-gray-800 text-gray-300 rounded-xl transition-all"
+                        >
+                            <ChevronLeft size={18} /> Retour
+                        </button>
+                        <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 text-orange-400 bg-orange-500/10 px-3 py-2 rounded-lg border border-orange-500/30">
                                 <Layers className="w-4 h-4" />
-                                <span className="text-sm font-medium">Étape 3/3 - Structure & Contenu</span>
+                                <span className="text-sm font-medium">Étape 4/4 - Structure</span>
                             </div>
                             <button 
                                 onClick={handleGenerateAll}

@@ -58,7 +58,7 @@ export default function CreateProductPage() {
     whatsapp: '',
     deliveryInfo: '',
     adCopies: [],
-    language: 'FR',
+    language: 'EN',
   });
   const [loading, setLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);

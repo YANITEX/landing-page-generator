@@ -145,9 +145,9 @@ export default function LandingPageEdit() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <Link href="/landing-pages" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+              <Link href={`/landing-pages/${params.id}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
                 <ArrowLeft className="w-4 h-4" />
-                Retour à la liste
+                Retour
               </Link>
               <div className="h-6 w-px bg-gray-700"></div>
               <div className="flex items-center gap-3">

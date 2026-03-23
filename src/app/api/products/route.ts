@@ -10,9 +10,6 @@ export async function GET() {
             order: 'asc',
           },
         },
-        landingPages: {
-          select: { id: true },
-        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -38,15 +35,9 @@ export async function POST(request: NextRequest) {
       name, 
       description, 
       images,
-      headline,
-      currency,
-      priceOld,
-      priceNew,
-      ctaText,
       phone,
       whatsapp,
       deliveryInfo,
-      benefits,
       adCopies
     } = body;
 
@@ -79,15 +70,9 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         description: description ? description.trim() : '',
-        headline: headline || null,
-        currency: currency || 'DA',
-        priceOld: priceOld || null,
-        priceNew: priceNew || null,
-        ctaText: ctaText || 'Commander maintenant',
         phone: phone || null,
         whatsapp: whatsapp || null,
         deliveryInfo: deliveryInfo || null,
-        benefits: benefits || undefined,
         // adCopies supprimé du modèle Product, on gère via Personas
         personas: {
           create: body.persona ? {
@@ -132,7 +117,6 @@ export async function POST(request: NextRequest) {
         images: {
           orderBy: { order: 'asc' },
         },
-        landingPages: { select: { id: true } },
       },
     });
 

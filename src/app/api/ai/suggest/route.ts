@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { genAI, AI_MODEL } from '@/lib/ai-client';
+import { genAI } from '@/lib/ai-client';
+import { getAIModel } from '@/lib/ai-config-service';
+import { withAILogging } from '@/lib/ai-logger';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, context, language = 'FR' } = body;
+    const { type, context, language = 'EN' } = body;
     // context contains product info and potentially existing persona/angle info
 
     let prompt = '';
@@ -43,12 +45,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Type invalide' }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: AI_MODEL });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().trim().replace(/^"|"$/g, '');
+    const modelName = await getAIModel('suggest');
+    
+    const suggestion = await withAILogging(
+      'suggest',
+      modelName,
+      { type, context, language },
+      prompt,
+      async () => {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text().trim().replace(/^"|"$/g, '');
+      }
+    );
 
-    return NextResponse.json({ suggestion: text });
+    return NextResponse.json({ suggestion });
 
   } catch (error) {
     console.error('Error generating suggestion:', error);

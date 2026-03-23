@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { genAI, AI_MODEL } from '@/lib/ai-client';
+import { genAI } from '@/lib/ai-client';
+import { getAIModel } from '@/lib/ai-config-service';
+import { withAILogging } from '@/lib/ai-logger';
 
 function extractBase64Data(dataUrl: string) {
   const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
@@ -11,7 +13,7 @@ function extractBase64Data(dataUrl: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { imageDataUrl, language = 'FR' } = await request.json();
+    const { imageDataUrl, language = 'EN' } = await request.json();
 
     if (!imageDataUrl || typeof imageDataUrl !== 'string') {
       return NextResponse.json(
@@ -26,12 +28,7 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid image data URL' },
         { status: 400 }
       );
-    }
-
-    const model = genAI.getGenerativeModel({
-      model: AI_MODEL,
-      generationConfig: { responseMimeType: 'application/json' },
-    });
+    };
 
     const prompt = `Tu es un expert en marketing et copywriting.
 Ta tâche est de générer du contenu marketing pour le produit montré dans l'image.
@@ -86,37 +83,54 @@ Génère toutes les suggestions suivantes au format JSON STRICT et sans autre te
 }
 Respecte strictement ce format JSON.`;
 
-    const result = await model.generateContent([
-      { text: prompt },
-      {
-        inlineData: {
-          mimeType: image.mimeType,
-          data: image.data,
-        },
-      },
-    ]);
+    const modelName = await getAIModel('generateAll');
+    
+    const generatedContent = await withAILogging(
+      'generateAll',
+      modelName,
+      { imageDataUrl: 'base64Image...', language },
+      prompt,
+      async () => {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: { responseMimeType: 'application/json' },
+        });
 
-    const text = result.response.text();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Impossible de parser la réponse Gemini');
-    }
+        const result = await model.generateContent([
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: image.mimeType,
+              data: image.data,
+            },
+          },
+        ]);
 
-    const parsed = JSON.parse(jsonMatch[0]);
+        const text = result.response.text();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('Impossible de parser la réponse Gemini');
+        }
 
-    // Flatten ad copies for backward compatibility if needed, but primarily return the new structure
-    const flatAdCopies = parsed.persona?.marketingAngles?.flatMap((angle: any) => 
-      angle.adCopies?.map((copy: any) => copy.text)
-    ) || [];
+        const parsed = JSON.parse(jsonMatch[0]);
 
-    return NextResponse.json({
-      productName: parsed.productName || '',
-      headline: parsed.headline || '',
-      description: parsed.description || '',
-      benefits: Array.isArray(parsed.benefits) ? parsed.benefits.slice(0, 5) : [],
-      adCopies: flatAdCopies, // Keep for legacy frontend support during transition
-      persona: parsed.persona // Valid new structure
-    });
+        // Flatten ad copies for backward compatibility if needed, but primarily return the new structure
+        const flatAdCopies = parsed.persona?.marketingAngles?.flatMap((angle: any) => 
+          angle.adCopies?.map((copy: any) => copy.text)
+        ) || [];
+
+        return {
+          productName: parsed.productName || '',
+          headline: parsed.headline || '',
+          description: parsed.description || '',
+          benefits: Array.isArray(parsed.benefits) ? parsed.benefits.slice(0, 5) : [],
+          adCopies: flatAdCopies, // Keep for legacy frontend support during transition
+          persona: parsed.persona || null,
+        };
+      }
+    );
+
+    return NextResponse.json(generatedContent);
   } catch (error) {
     console.error('Error generating from image:', error);
     return NextResponse.json(

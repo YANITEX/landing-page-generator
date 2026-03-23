@@ -10,7 +10,7 @@ if (!apiKey) {
 
 export const genAI = new GoogleGenerativeAI(apiKey || '');
 
-export const AI_MODEL = 'gemini-3-flash-preview';
+export const AI_MODEL = 'gemini-2.0-flash';
 export const AI_IMAGE_MODEL = 'gemini-2.5-flash-image';
 
 // Fonction helper pour générer les images de section
@@ -25,8 +25,8 @@ export async function generateSectionImage(sectionId: string, sectionType: strin
     // Construire le prompt basé sur le type de section
     const prompt = buildSectionPrompt(sectionType, landingPage);
     
-    // Récupérer l'image du produit si disponible
-    const productImageUrl = landingPage.product?.images?.[0]?.url;
+    // Récupérer l'image du produit via persona
+    const productImageUrl = landingPage.persona?.product?.images?.[0]?.url;
 
     // Initialize AI
     const ai = new GoogleGenAI({ apiKey: apiKey || '' });
@@ -69,9 +69,16 @@ export async function generateSectionImage(sectionId: string, sectionType: strin
       throw new Error("No response from Gemini API");
     }
 
+    const candidate = response.candidates[0];
+    
+    // Vérifications de sécurité pour TypeScript
+    if (!candidate?.content?.parts) {
+      throw new Error("Invalid response structure from Gemini API");
+    }
+
     // Extraire l'image générée
     let output = '';
-    for (const part of response.candidates[0].content.parts) {
+    for (const part of candidate.content.parts) {
       if (part.inlineData) {
         output = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
         break;

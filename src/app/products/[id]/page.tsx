@@ -29,10 +29,9 @@ interface AdCopy { id: string; text: string; cta: string | null; platform: strin
 interface MarketingAngle { id: string; name: string; description: string | null; adCopies: AdCopy[]; }
 interface Persona { id: string; name: string; description: string | null; marketingAngles: MarketingAngle[]; landingPages?: LandingPagePreview[]; }
 interface Product {
-  id: string; name: string; description: string; headline: string | null;
-  currency: string; priceOld: number | null; priceNew: number | null;
-  ctaText: string; phone: string | null; whatsapp: string | null;
-  deliveryInfo: string | null; benefits: Array<{ title: string; description: string }> | null;
+  id: string; name: string; description: string;
+  phone: string | null; whatsapp: string | null;
+  deliveryInfo: string | null;
   createdAt: string; updatedAt: string;
   images: Array<{ id: string; url: string; isPrimary: boolean; order: number; }>;
   landingPages: Array<{ id: string }>; personas?: Persona[];
@@ -308,16 +307,6 @@ export default function ProductDetailPage() {
                   
                   <div className="space-y-4">
                       <EditableField 
-                         label="Accroche" 
-                         value={product.headline} 
-                         onSave={(v) => updateProductField('headline', v)} 
-                         className="text-lg font-semibold text-emerald-400"
-                         placeholder="Ex: La solution ultime..."
-                         suggestionType="headline"
-                         productContext={{ productName: product.name }}
-                      />
-
-                      <EditableField 
                          label="Description" 
                          value={product.description} 
                          onSave={(v) => updateProductField('description', v)} 
@@ -330,86 +319,14 @@ export default function ProductDetailPage() {
 
                       <div className="grid grid-cols-2 gap-4">
                           <div>
-                             <label className="text-xs text-gray-500 uppercase font-semibold mb-1 block">Prix</label>
-                             <div className="flex gap-1.5 items-center">
-                                 <EditableField value={product.priceNew} type="number" onSave={(v) => updateProductField('priceNew', v)} className="text-xl font-bold text-white" placeholder="0.00" />
-                                 <select 
-                                    value={product.currency} 
-                                    onChange={(e) => updateProductField('currency', e.target.value)}
-                                    className="bg-gray-800 border-none text-gray-400 text-sm font-bold focus:ring-0 cursor-pointer rounded py-0.5 px-1"
-                                 >
-                                    {['DA', 'EUR', 'USD', 'MAD', 'TND'].map(c => <option key={c} value={c}>{c}</option>)}
-                                 </select>
-                             </div>
-                             <EditableField value={product.priceOld} type="number" onSave={(v) => updateProductField('priceOld', v)} className="text-gray-500 line-through text-xs" placeholder="Ancien prix..." />
-                          </div>
-                          
-                          <div className="space-y-3">
-                              <EditableField label="CTA" value={product.ctaText} onSave={(v) => updateProductField('ctaText', v)} className="text-emerald-400 font-medium text-sm" />
                               <EditableField label="Téléphone" value={product.phone} onSave={(v) => updateProductField('phone', v)} className="text-gray-300 text-xs" placeholder="+213..." />
+                          </div>
+                          <div>
+                              <EditableField label="WhatsApp" value={product.whatsapp} onSave={(v) => updateProductField('whatsapp', v)} className="text-gray-300 text-xs" placeholder="+213..." />
                           </div>
                       </div>
                   </div>
               </div>
-
-              {/* Bénéfices - Section compacte collapsible */}
-              <details className="bg-gray-800/30 rounded-xl border border-gray-700 backdrop-blur-sm group" open>
-                  <summary className="p-3 cursor-pointer list-none flex justify-between items-center hover:bg-white/5 transition-colors">
-                     <h2 className="text-sm font-semibold text-gray-400 flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-500"/> 
-                        Bénéfices ({(product.benefits || []).length})
-                     </h2>
-                     <div className="flex items-center gap-2">
-                        <button 
-                           onClick={(e) => {
-                              e.preventDefault();
-                              updateProductField('benefits', [...(product.benefits||[]), {title: 'Nouveau', description: 'Description...'}]);
-                           }} 
-                           className="text-xs flex items-center gap-1 text-emerald-400 hover:text-emerald-300 px-2 py-1 hover:bg-emerald-500/10 rounded"
-                        >
-                           <Plus size={12}/> Ajouter
-                        </button>
-                        <ChevronDown size={16} className="text-gray-500 group-open:rotate-180 transition-transform" />
-                     </div>
-                  </summary>
-                  
-                  <div className="px-3 pb-3 space-y-1.5 max-h-60 overflow-y-auto">
-                      {(product.benefits || []).map((benefit, idx) => (
-                         <div key={idx} className="p-2 bg-gray-800/50 rounded border border-gray-700/50 relative group/item hover:border-emerald-500/30 transition-colors">
-                             <div className="flex items-start gap-2">
-                                <div className="flex-1 min-w-0">
-                                   <EditableField 
-                                      value={benefit.title} 
-                                      onSave={async (v) => {
-                                         const newBenefits = [...(product.benefits||[])];
-                                         newBenefits[idx].title = v;
-                                         await updateProductField('benefits', newBenefits);
-                                      }}
-                                      className="font-semibold text-emerald-400 text-sm"
-                                      placeholder="Titre"
-                                   />
-                                   <EditableField 
-                                      value={benefit.description} 
-                                      onSave={async (v) => {
-                                         const newBenefits = [...(product.benefits||[])];
-                                         newBenefits[idx].description = v;
-                                         await updateProductField('benefits', newBenefits);
-                                      }}
-                                      className="text-gray-400 text-xs line-clamp-1"
-                                      placeholder="Description..."
-                                   />
-                                </div>
-                                <button 
-                                   onClick={() => updateProductField('benefits', (product.benefits||[]).filter((_, i) => i !== idx))}
-                                   className="text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 hover:bg-red-500/10 rounded flex-shrink-0"
-                                >
-                                   <X size={12}/>
-                                </button>
-                             </div>
-                         </div>
-                      ))}
-                  </div>
-              </details>
            </div>
         </div>
 

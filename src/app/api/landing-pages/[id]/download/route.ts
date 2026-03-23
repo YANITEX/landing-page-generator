@@ -57,24 +57,31 @@ export async function GET(
     }
 
     // Télécharger et assembler toutes les images en une seule image composite
-    const imageBuffers: Buffer[] = [];
+    // Prendre uniquement la première image de chaque section (comme dans l'aperçu)
+    // L'aperçu affiche les images avec w-full h-auto (taille originale, sans déformation)
+    const imageBuffers: { buffer: Buffer; width: number; height: number }[] = [];
     let maxWidth = 0;
     let totalHeight = 0;
 
-    // Collecter toutes les images et calculer les dimensions
+    // Collecter la première image de chaque section
     for (const section of sectionsWithImages) {
       const sectionImages = getImages(section);
       
-      for (const imageUrl of sectionImages) {
+      if (sectionImages.length > 0) {
+        const imageUrl = sectionImages[0];
         try {
-          const imageData = await downloadImage(imageUrl);
-          const image = sharp(imageData);
-          const { width, height } = await image.metadata();
+          const buffer = await downloadImage(imageUrl);
+          const metadata = await sharp(buffer).metadata();
           
-          if (width && height) {
-            maxWidth = Math.max(maxWidth, width);
-            totalHeight += height;
-            imageBuffers.push(imageData);
+          if (metadata.width && metadata.height) {
+            maxWidth = Math.max(maxWidth, metadata.width);
+            totalHeight += metadata.height;
+            
+            imageBuffers.push({
+              buffer,
+              width: metadata.width,
+              height: metadata.height
+            });
           }
         } catch (error) {
           console.error(`Erreur traitement section ${section.id}:`, error);
@@ -89,58 +96,71 @@ export async function GET(
       );
     }
 
-    // Créer l'image composite en assemblant verticalement
-    let currentY = 0;
-    const composite = sharp({
-      create: {
-        width: maxWidth,
-        height: totalHeight,
-        channels: 3,
-        background: { r: 255, g: 255, b: 255 }
-      }
-    });
-
+    // Assembler verticalement - redimensionner chaque image à la largeur maximale
+    // Pour correspondre à l'aperçu qui utilise w-full h-auto
     const compositeInputs: any[] = [];
+    let currentY = 0;
+    let adjustedTotalHeight = 0;
     
-    for (const imageBuffer of imageBuffers) {
+    // Recalculer la hauteur totale en fonction du redimensionnement
+    const resizedImages: { buffer: Buffer; height: number }[] = [];
+    
+    for (const { buffer, width, height } of imageBuffers) {
       try {
-        const image = sharp(imageBuffer);
-        const { width, height } = await image.metadata();
+        // Calculer la nouvelle hauteur en maintenant le ratio d'aspect
+        const aspectRatio = height / width;
+        const newHeight = Math.round(maxWidth * aspectRatio);
         
-        if (width && height) {
-          // Redimensionner si nécessaire pour s'adapter à la largeur max
-          let processedImage = image;
-          if (width !== maxWidth) {
-            processedImage = image.resize(maxWidth, Math.round(height * (maxWidth / width)));
-          }
-          
-          compositeInputs.push({
-            input: await processedImage.png().toBuffer(),
-            top: currentY,
-            left: 0
-          });
-          
-          currentY += Math.round(height * (maxWidth / width));
-        }
+        // Redimensionner l'image à la largeur maximale
+        const resizedBuffer = await sharp(buffer)
+          .resize(maxWidth, newHeight, {
+            fit: 'fill',
+            kernel: 'lanczos3'
+          })
+          .png()
+          .toBuffer();
+        
+        resizedImages.push({
+          buffer: resizedBuffer,
+          height: newHeight
+        });
+        
+        adjustedTotalHeight += newHeight;
       } catch (error) {
-        console.error('Erreur assemblage image:', error);
+        console.error('Erreur redimensionnement image:', error);
       }
     }
 
-    const finalImageBuffer = await composite
+    // Assembler toutes les images redimensionnées
+    for (const { buffer, height } of resizedImages) {
+      compositeInputs.push({
+        input: buffer,
+        top: currentY,
+        left: 0
+      });
+      
+      currentY += height;
+    }
+
+    // Créer l'image finale avec la largeur maximale et la hauteur ajustée
+    const finalImageBuffer = await sharp({
+      create: {
+        width: maxWidth,
+        height: adjustedTotalHeight,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 }
+      }
+    })
       .composite(compositeInputs)
       .png()
       .toBuffer();
 
-    const fileName = `${sanitizeFileName(landingPage.headline || 'landing-page')}-complete.png`;
+    const fileName = `landing-page-${id}-complete.png`;
     
-    // S'assurer que le nom de fichier est valide ou utiliser un nom par défaut
-    const safeFileName = fileName || 'landing-page-complete.png';
-
     return new NextResponse(finalImageBuffer, {
       headers: {
         'Content-Type': 'image/png',
-        'Content-Disposition': `attachment; filename="${safeFileName}"`,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
         'Content-Length': finalImageBuffer.length.toString()
       }
     });
@@ -158,13 +178,16 @@ export async function GET(
 function getSectionTypeName(type: string): string {
   const sectionTypeNames: { [key: string]: string } = {
     hero: 'Hero',
-    problem: 'Probleme',
-    solution: 'Solution',
-    benefits: 'Benefices',
-    'social-proof': 'Preuves-sociales',
-    'how-it-works': 'Comment-ca-marche',
+    benefits: 'Proposition-de-valeur',
+    'social-proof': 'Temoignages',
+    features: 'Caracteristiques',
+    'before-after': 'Avant-Apres',
+    demo: 'Demonstration',
+    comparison: 'Comparaison',
+    guarantees: 'Garanties',
+    urgency: 'Urgence',
     faq: 'FAQ',
-    cta: 'Call-to-action'
+    cta: 'CTA-Final'
   };
   return sectionTypeNames[type] || type;
 }

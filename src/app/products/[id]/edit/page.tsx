@@ -13,13 +13,7 @@ interface UploadedImage {
 interface FormData {
   images: UploadedImage[];
   productName: string;
-  headline: string;
   description: string;
-  currency: string;
-  priceOld: number | null;
-  priceNew: number | null;
-  benefits: Array<{ title: string; description: string }>;
-  ctaText: string;
   phone: string;
   whatsapp: string;
   deliveryInfo: string;
@@ -45,18 +39,12 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState<FormData>({
     images: [],
     productName: '',
-    headline: '',
     description: '',
-    currency: 'DA',
-    priceOld: null,
-    priceNew: null,
-    benefits: [],
-    ctaText: 'Commander maintenant',
     phone: '',
     whatsapp: '',
     deliveryInfo: '',
     adCopies: [],
-    language: 'FR',
+    language: 'EN',
   });
 
   const [loading, setLoading] = useState(true);
@@ -85,13 +73,7 @@ export default function EditProductPage() {
         setFormData(prev => ({
           ...prev,
           productName: product.name,
-          headline: product.headline || '',
           description: product.description || '',
-          currency: product.currency || 'DA',
-          priceOld: product.priceOld || null,
-          priceNew: product.priceNew || null,
-          benefits: (product.benefits && Array.isArray(product.benefits)) ? product.benefits : [],
-          ctaText: product.ctaText || 'Commander maintenant',
           phone: product.phone || '',
           whatsapp: product.whatsapp || '',
           deliveryInfo: product.deliveryInfo || '',

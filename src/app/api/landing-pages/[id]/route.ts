@@ -10,11 +10,15 @@ export async function GET(
     const landingPage = await prisma.landingPage.findUnique({
       where: { id },
       include: {
-        product: {
+        persona: {
           include: {
-            images: {
-              orderBy: {
-                order: 'asc',
+            product: {
+              include: {
+                images: {
+                  orderBy: {
+                    order: 'asc',
+                  },
+                },
               },
             },
           },

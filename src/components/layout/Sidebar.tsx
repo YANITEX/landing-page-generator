@@ -19,6 +19,7 @@ import {
   Settings,
   User,
   ChevronDown,
+  Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -53,6 +54,8 @@ export default function Sidebar() {
     { name: 'Historique', icon: BarChart, href: '/history' },
     { name: 'Crédits', icon: CreditCard, href: '/credits' },
     { name: 'Tarifs', icon: DollarSign, href: '/pricing' },
+    { name: 'Config AI', icon: Settings, href: '/admin/ai-settings' },
+    { name: 'Logs AI', icon: Activity, href: '/admin/ai-logs' },
     { name: 'Paramètres Admin', icon: Settings, href: '/admin' },
   ];
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { uploadBufferToCloudinary } from '@/lib/cloudinary';
 import { v4 as uuidv4 } from 'uuid';
 
 export const maxDuration = 60; // 60 seconds
@@ -27,13 +26,15 @@ export async function POST(request: NextRequest) {
       // Generate unique filename
       const ext = file.name.split('.').pop();
       const filename = `${uuidv4()}.${ext}`;
-      const filepath = join(process.cwd(), 'public', 'uploads', filename);
 
-      // Save file
-      await writeFile(filepath, buffer);
+      // Upload to Cloudinary
+      const cloudinaryUrl = await uploadBufferToCloudinary(
+        buffer,
+        filename,
+        'products'
+      );
 
-      // Return public URL
-      urls.push(`/uploads/${filename}`);
+      urls.push(cloudinaryUrl);
     }
 
     return NextResponse.json({ urls });

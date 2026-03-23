@@ -16,8 +16,16 @@ export async function GET(
       },
       include: {
         landingPage: {
-          select: {
-            headline: true
+          include: {
+            persona: {
+              include: {
+                product: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -54,7 +62,8 @@ export async function GET(
     // Télécharger directement la première image
     const imageUrl = images[0];
     const imageData = await downloadImage(imageUrl);
-    const fileName = `${sanitizeFileName(section.landingPage.headline || 'landing-page')}-${getSectionTypeName(section.type)}.${getImageExtension(imageUrl)}`;
+    const productName = section.landingPage.persona?.product?.name || 'landing-page';
+    const fileName = `${sanitizeFileName(productName)}-${getSectionTypeName(section.type)}.${getImageExtension(imageUrl)}`;
 
     return new NextResponse(imageData, {
       headers: {
@@ -77,13 +86,16 @@ export async function GET(
 function getSectionTypeName(type: string): string {
   const sectionTypeNames: { [key: string]: string } = {
     hero: 'Hero',
-    problem: 'Probleme',
-    solution: 'Solution',
-    benefits: 'Benefices',
-    'social-proof': 'Preuves-sociales',
-    'how-it-works': 'Comment-ca-marche',
+    benefits: 'Proposition-de-valeur',
+    'social-proof': 'Temoignages',
+    features: 'Caracteristiques',
+    'before-after': 'Avant-Apres',
+    demo: 'Demonstration',
+    comparison: 'Comparaison',
+    guarantees: 'Garanties',
+    urgency: 'Urgence',
     faq: 'FAQ',
-    cta: 'Call-to-action'
+    cta: 'CTA-Final'
   };
   return sectionTypeNames[type] || type;
 }

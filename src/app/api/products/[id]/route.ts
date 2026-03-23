@@ -28,7 +28,6 @@ export async function GET(
               landingPages: {
                 select: {
                   id: true,
-                  headline: true,
                   status: true,
                   createdAt: true,
                   sections: {
@@ -47,10 +46,7 @@ export async function GET(
               }
             })
           }
-        },
-        landingPages: {
-          select: { id: true },
-        },
+        }
       },
     });
 
@@ -92,15 +88,9 @@ export async function PUT(
     const {
       name,
       description,
-      headline,
-      currency,
-      priceOld,
-      priceNew,
-      ctaText,
       phone,
       whatsapp,
       deliveryInfo,
-      benefits,
       adCopies,
       images,
     } = body;
@@ -131,26 +121,6 @@ export async function PUT(
       updateData.description = description ? description.trim() : '';
     }
 
-    if (headline !== undefined) {
-      updateData.headline = headline ? headline.trim() : null;
-    }
-
-    if (currency !== undefined) {
-      updateData.currency = currency || 'DA';
-    }
-
-    if (priceOld !== undefined) {
-      updateData.priceOld = priceOld ? parseFloat(priceOld.toString()) : null;
-    }
-
-    if (priceNew !== undefined) {
-      updateData.priceNew = priceNew ? parseFloat(priceNew.toString()) : null;
-    }
-
-    if (ctaText !== undefined) {
-      updateData.ctaText = ctaText || 'Commander maintenant';
-    }
-
     if (phone !== undefined) {
       updateData.phone = phone ? phone.trim() : null;
     }
@@ -161,10 +131,6 @@ export async function PUT(
 
     if (deliveryInfo !== undefined) {
       updateData.deliveryInfo = deliveryInfo ? deliveryInfo.trim() : null;
-    }
-
-    if (benefits !== undefined) {
-      updateData.benefits = Array.isArray(benefits) ? benefits : null;
     }
 
     if (adCopies !== undefined) {
@@ -286,7 +252,6 @@ export async function DELETE(
       where: { id },
       include: {
         images: { select: { id: true } },
-        landingPages: { select: { id: true } },
       },
     });
 
@@ -298,9 +263,9 @@ export async function DELETE(
       );
     }
 
-    console.log(`Deleting product ${id} with ${product.images.length} images and ${product.landingPages.length} landing pages`);
+    console.log(`Deleting product ${id} with ${product.images.length} images`);
 
-    // Supprimer le produit (les images et landing pages seront supprimées en cascade)
+    // Supprimer le produit (les images et personas seront supprimés en cascade, ainsi que leurs landing pages)
     await prisma.product.delete({
       where: { id },
     });

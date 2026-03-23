@@ -1,7 +1,10 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { GoogleGenAI } from "@google/genai";
+import { getAIModel } from '@/lib/ai-config-service';
+import { withAILogging } from '@/lib/ai-logger';
+import { uploadBase64ToCloudinary } from '@/lib/cloudinary';
+import { Goal } from 'lucide-react';
 
 export async function POST(request: NextRequest) {
   let sectionId: string | null = null;
@@ -9,12 +12,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     sectionId = body.sectionId;
-    const { prompt, productImageUrl } = body;
+    const { prompt, productImageUrl, palette, language, country } = body;
 
     console.log('Generate section image - received:', {
       sectionId,
       promptType: typeof prompt,
-      productImageUrl: productImageUrl ? 'provided' : 'none'
+      productImageUrl: productImageUrl ? 'provided' : 'none',
+      palette: palette ? 'provided' : 'none',
+      language: language || 'not provided',
+      country: country || 'not provided'
     });
 
     if (!sectionId) {
@@ -25,19 +31,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    // Charger la section et la landing page depuis la base de données
+    // Charger la section depuis la base de données
     const section = await prisma.section.findUnique({
-      where: { id: sectionId },
-      include: {
-        landingPage: {
-          select: {
-            primaryColor: true,
-            secondaryColor: true,
-            accentColor: true,
-            backgroundColor: true,
-          }
-        }
-      }
+      where: { id: sectionId }
     });
 
     if (!section) {
@@ -53,19 +49,17 @@ export async function POST(request: NextRequest) {
     // Construire le prompt structuré au format JSON demandé
     const structuredPrompt = {
       mode: "image_to_image",
-      language: section.landingPage ? "fr" : "fr", // Peut être récupéré de la BD si nécessaire
-      canvas: {
-        width: 1440,
-        height: "auto",
-        sectionType: section.type
-      },
+      Goal : `generate a professional and modern landing page section image to promote a product, based on the provided prompt and product image. The image should be visually appealing, high-quality, and suitable for a landing page.`,
+      language: language && country ? `language must be ${language} from ${country}` : language ? `language must be ${language}` : undefined,
+      width: "image size must be 800x800",  // Largeur fixe pour toutes les sections
       palette: {
-        primaryColor: section.landingPage?.primaryColor || "auto",
-        secondaryColor: section.landingPage?.secondaryColor || "auto",
-        accentColor: section.landingPage?.accentColor || "auto",
-        backgroundColor: section.landingPage?.backgroundColor || "auto",
+        primaryColor: palette?.primary,
+        secondaryColor: palette?.secondary,
+        accentColor: palette?.accent,
+        backgroundColor: palette?.background ,
       },
-      prompt: prompt // Le prompt du client (obligatoire)
+      prompt: prompt, // Le prompt du client (obligatoire)
+      output: "only a single image in base64 format, embedded directly in the response as a data URI"
     };
 
     const finalPrompt = JSON.stringify(structuredPrompt, null, 2);
@@ -121,49 +115,68 @@ export async function POST(request: NextRequest) {
     // However, typings might require an array or the specific `contents` property on request object.
     // Let's stick exactly to the working user snippet pattern.
 
-    console.log(`Calling Gemini model 'gemini-3-pro-image-preview' with ${parts.length} parts...`);
+    const modelName = await getAIModel('images');
+    console.log(`Calling Gemini model '${modelName}' with ${parts.length} parts...`);
 
-    // Call the model using the new SDK pattern
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
-      contents: {
-        parts: parts,
-      },
-    });
+    const output = await withAILogging(
+      'images',
+      modelName,
+      { sectionId, prompt, productImageUrl: productImageUrl ? 'provided' : 'none' },
+      finalPrompt,
+      async () => {
+        // Call the model using the new SDK pattern
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: {
+            parts: parts,
+          },
+        });
 
-    if (!response || !response.candidates || response.candidates.length === 0) {
-      throw new Error("No response from Gemini API");
-    }
+        if (!response || !response.candidates || response.candidates.length === 0) {
+          throw new Error("No response from Gemini API");
+        }
 
-    // Vérifications de sécurité pour TypeScript
-    const candidate = response.candidates[0];
-    if (!candidate?.content?.parts) {
-      throw new Error("Invalid response structure from Gemini API");
-    }
+        // Vérifications de sécurité pour TypeScript
+        const candidate = response.candidates[0];
+        if (!candidate?.content?.parts) {
+          throw new Error("Invalid response structure from Gemini API");
+        }
 
-    // Iterate through all parts to find the resulting image
-    let output = '';
-    for (const part of candidate.content.parts) {
-      if (part.inlineData) {
-        output = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        break;
+        // Iterate through all parts to find the resulting image
+        let imageOutput = '';
+        for (const part of candidate.content.parts) {
+          if (part.inlineData) {
+            imageOutput = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            break;
+          }
+        }
+
+        if (!imageOutput) {
+          throw new Error("No image was returned in the AI response");
+        }
+        
+        return imageOutput;
       }
-    }
-
-    if (!output) {
-      throw new Error("No image was returned in the AI response");
-    }
+    );
     
-    // Update section with result
+    // Upload l'image vers Cloudinary
+    console.log('Uploading image to Cloudinary...');
+    const cloudinaryUrl = await uploadBase64ToCloudinary(
+      output,
+      `landing-pages/sections/${sectionId}`
+    );
+    console.log('Image uploaded to Cloudinary:', cloudinaryUrl);
+    
+    // Update section with Cloudinary URL
     await prisma.section.update({
       where: { id: sectionId },
       data: { 
-        images: JSON.stringify([output]), // Stocker comme JSON string pour SQLite
+        images: JSON.stringify([cloudinaryUrl]), // Stocker l'URL Cloudinary
         generationStatus: 'completed'
       },
     });
 
-    return NextResponse.json({ success: true, image: output });
+    return NextResponse.json({ success: true, image: cloudinaryUrl });
 
   } catch (error: any) {
     console.error('Error generating section image:', error);

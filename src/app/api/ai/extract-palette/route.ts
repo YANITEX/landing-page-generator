@@ -1,6 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from "@google/genai";
+import { getAIModel } from '@/lib/ai-config-service';
+import { withAILogging } from '@/lib/ai-logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,53 +48,61 @@ export async function POST(request: NextRequest) {
 
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: contentType,
-            },
-          },
-          {
-            text: prompt,
-          },
-        ],
-      },
-    });
-
-    if (!response || !response.candidates || response.candidates.length === 0) {
-      throw new Error("No response from Gemini API");
-    }
-
-    const candidate = response.candidates[0];
-    const text = candidate.content.parts.find((p: any) => p.text)?.text || '';
+    const modelName = await getAIModel('palette');
     
-    try {
-      const cleanText = text.replace(/```json|```/g, '').trim();
-      const palette = JSON.parse(cleanText);
-      
-      // Validate palette structure
-      if (!palette.primary || !palette.secondary || !palette.accent || !palette.background) {
-        throw new Error('Invalid palette structure');
+    const palette = await withAILogging(
+      'palette',
+      modelName,
+      { imageUrl },
+      prompt,
+      async () => {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: {
+            parts: [
+              {
+                inlineData: {
+                  data: base64Image,
+                  mimeType: contentType,
+                },
+              },
+              {
+                text: prompt,
+              },
+            ],
+          },
+        });
+
+        if (!response || !response.candidates || response.candidates.length === 0) {
+          throw new Error("No response from Gemini API");
+        }
+
+        const candidate = response.candidates[0];
+        
+        // Vérifications de sécurité pour TypeScript
+        if (!candidate?.content?.parts) {
+          throw new Error("Invalid response structure from Gemini API");
+        }
+        
+        const text = candidate.content.parts.find((p: any) => p.text)?.text || '';
+        
+        const cleanText = text.replace(/```json|```/g, '').trim();
+        const parsedPalette = JSON.parse(cleanText);
+        
+        // Validate palette structure
+        if (!parsedPalette.primary || !parsedPalette.secondary || !parsedPalette.accent || !parsedPalette.background) {
+          throw new Error('Invalid palette structure');
+        }
+        
+        return parsedPalette;
       }
-      
-      return NextResponse.json(palette);
-    } catch (e) {
-      console.error('Failed to parse palette JSON:', text);
-      // Fallback palette
-      return NextResponse.json({ 
-        primary: '#2563eb', 
-        secondary: '#64748b', 
-        accent: '#10b981', 
-        background: '#ffffff' 
-      });
-    }
+    );
+    
+    return NextResponse.json(palette);
 
   } catch (error) {
-    console.error('Error extracting palette:', error);
+    console.error('Failed to parse palette JSON:', error);
+    // Fallback palette
     return NextResponse.json({ 
       primary: '#2563eb', 
       secondary: '#64748b', 

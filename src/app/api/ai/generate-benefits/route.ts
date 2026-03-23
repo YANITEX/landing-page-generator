@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { genAI, AI_MODEL } from '@/lib/ai-client';
+import { genAI } from '@/lib/ai-client';
+import { getAIModel } from '@/lib/ai-config-service';
+import { withAILogging } from '@/lib/ai-logger';
 
 export async function POST(request: NextRequest) {
   try {
-    const { productName, description, language = 'FR' } = await request.json();
+    const { productName, description, language = 'EN' } = await request.json();
 
     if (!productName) {
       return NextResponse.json(
@@ -30,28 +32,39 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format EXACT, sans autre texte:
 
 Les bénéfices doivent être concis, percutants et orientés client.`;
 
-    const model = genAI.getGenerativeModel({ 
-      model: AI_MODEL,
-      generationConfig: { responseMimeType: "application/json" }
-    });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const modelName = await getAIModel('benefits');
+    
+    // Exécuter avec logging automatique
+    const result = await withAILogging(
+      'benefits',
+      modelName,
+      { productName, description, language },
+      prompt,
+      async () => {
+        const model = genAI.getGenerativeModel({ 
+          model: modelName,
+          generationConfig: { responseMimeType: "application/json" }
+        });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
 
-    // Extraire le JSON de la réponse
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Impossible de parser la réponse Gemini');
-    }
+        // Extraire le JSON de la réponse
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('Impossible de parser la réponse Gemini');
+        }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
 
-    if (!Array.isArray(parsed.benefits) || parsed.benefits.length === 0) {
-      throw new Error('Format de réponse invalide');
-    }
+        if (!Array.isArray(parsed.benefits) || parsed.benefits.length === 0) {
+          throw new Error('Format de réponse invalide');
+        }
 
-    return NextResponse.json({
-      benefits: parsed.benefits.slice(0, 5),
-    });
+        return parsed.benefits.slice(0, 5);
+      }
+    );
+
+    return NextResponse.json({ benefits: result });
   } catch (error) {
     console.error('Error generating benefits:', error);
     return NextResponse.json(

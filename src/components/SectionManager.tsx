@@ -204,7 +204,7 @@ export default function SectionManager({ landingPageId, sections, onSectionsUpda
         const contentDisposition = response.headers.get('Content-Disposition');
         const fileName = contentDisposition 
           ? contentDisposition.split('filename="')[1].split('"')[0]
-          : `section-${sectionId}.zip`;
+          : `section-${sectionId}.png`;
         
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -215,10 +215,13 @@ export default function SectionManager({ landingPageId, sections, onSectionsUpda
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
-        console.error('Erreur lors du téléchargement');
+        const errorData = await response.json();
+        console.error('Erreur lors du téléchargement:', errorData);
+        alert(`Erreur lors du téléchargement: ${errorData.error || 'Erreur inconnue'}`);
       }
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
+      alert('Erreur lors du téléchargement de la section');
     }
   };
 

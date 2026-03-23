@@ -12,7 +12,6 @@ interface Product {
   name: string;
   description: string | null;
   images: Array<{ id: string; url: string }>;
-  landingPages: Array<{ id: string }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -167,10 +166,7 @@ export default function ProductsPage() {
                       {/* Stats */}
                       <div className="flex gap-3 mb-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                          📸 {product.images.length}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          📄 {product.landingPages.length}
+                          📸 {product.images.length} images
                         </span>
                       </div>
 

@@ -6,45 +6,31 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "sqlserver"
   url      = env("DATABASE_URL")
 }
 
 model Product {
   id          String   @id @default(cuid())
   name        String
-  description String?
+  description String?  @db.Text
   
-  // Informations produit détaillées
-  headline    String?
-  currency    String   @default("DA")
-  priceOld    Float?
-  priceNew    Float?
-  
-  // CTA & Contact
-  ctaText     String   @default("Commander maintenant")
-  phone       String?
-  whatsapp    String?
+  // Contact & Livraison
+  phone        String?
+  whatsapp     String?
   deliveryInfo String?
-  
-  // Bénéfices (JSON)
-  benefits    Json?
-  
-  // ANCIEN: Ad Copies (JSON array) - Remplacé par la structure Persona -> MarketingAngle -> AdCopy
-  // adCopies    Json?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  images       ProductImage[]
-  personas     Persona[]
-  landingPages LandingPage[] // Gardé pour rétrocompatibilité, mais idéalement on passe par les personas
+  images   ProductImage[]
+  personas Persona[]
 }
 
 model Persona {
   id          String   @id @default(cuid())
   name        String   // Ex: "Maman occupée", "Étudiant fauché"
-  description String?  // Description détaillée du persona, douleurs, désirs
+  description String?  @db.Text  // Description détaillée du persona, douleurs, désirs
   
   productId   String
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -59,7 +45,7 @@ model Persona {
 model MarketingAngle {
   id          String   @id @default(cuid())
   name        String   // Ex: "Gain de temps", "Économie d'argent"
-  description String?  // Explication de l'angle
+  description String?  @db.Text  // Explication de l'angle
   
   personaId   String
   persona     Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
@@ -72,7 +58,7 @@ model MarketingAngle {
 
 model AdCopy {
   id               String   @id @default(cuid())
-  text             String   // Corps du texte avec emojis et structuré
+  text             String   @db.Text  // Corps du texte avec emojis et structuré
   cta              String?  // Appel à l'action spécifique
   platform         String?  // Ex: "Facebook", "TikTok", "Email"
   
@@ -85,7 +71,7 @@ model AdCopy {
 
 model ProductImage {
   id        String   @id @default(cuid())
-  url       String
+  url       String   @db.Text
   isPrimary Boolean  @default(false)
   order     Int      @default(0)
   productId String
@@ -94,47 +80,26 @@ model ProductImage {
 }
 
 model LandingPage {
-  id          String   @id @default(cuid())
+  id        String   @id @default(cuid())
   
-  // Relations
-  productId   String?  // Rendu optionnel pour transition vers Persona
-  product     Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
-  personaId   String?  // Nouvelle relation vers Persona
-  persona     Persona? @relation(fields: [personaId], references: [id], onDelete: Cascade)
-  
-  // Informations produit
-  headline    String
-  description String?
-  price       Float
-  oldPrice    Float?
-  currency    String   @default("EUR")
-  
-  // CTA & Contact
-  ctaText     String   @default("Acheter maintenant")
-  phone       String?
-  whatsapp    String?
-  
-  // Palette de couleurs
-  primaryColor    String
-  secondaryColor  String
-  accentColor     String
-  backgroundColor String
+  // Relation unique vers Persona (qui est lié au Product)
+  personaId String
+  persona   Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
   
   // Status
-  status      String   @default("draft") // draft, published
+  status String @default("draft") // draft, published
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   
-  benefits    Benefit[]
-  sections    Section[]
+  benefits Benefit[]
+  sections Section[]
 }
 
 model Benefit {
   id             String      @id @default(cuid())
   title          String
-  description    String
+  description    String      @db.Text
   icon           String?
   order          Int         @default(0)
   landingPageId  String
@@ -142,13 +107,34 @@ model Benefit {
   createdAt      DateTime    @default(now())
 }
 
+model AIConfiguration {
+  id          String   @id @default(cuid())
+  endpoint    String   @unique // 'benefits', 'headline', 'images', 'palette', etc.
+  modelName   String   // 'gemini-3-flash-preview', 'gemini-2.5-flash', etc.
+  description String?  // Description de l'endpoint
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AIRequestLog {
+  id            String   @id @default(cuid())
+  endpoint      String   // 'benefits', 'headline', etc.
+  modelUsed     String   // Modèle AI utilisé
+  inputData     String   @db.Text  // JSON des données d'entrée
+  prompt        String?  @db.Text  // Le prompt envoyé à l'AI
+  response      String?  @db.Text  // La réponse de l'AI
+  status        String   // 'success', 'error'
+  errorMessage  String?  // Message d'erreur si échec
+  duration      Int?     // Durée en ms
+  createdAt     DateTime @default(now())
+}
+
 model Section {
   id             String      @id @default(cuid())
   type           String      // hero, problem, solution, before-after, benefits, how-it-works, social-proof, cta
-  title          String?
-  content        String?     // Text sans @db.Text pour SQLite
-  images         String      // JSON array d'images en string
-  prompt         String?     // Text sans @db.Text pour SQLite
+  images         String      @db.Text  // JSON array d'images en string
+  prompt         String?     @db.Text  // Prompt utilisé pour générer la section
   order          Int         @default(0)
   isActive       Boolean     @default(true)
   generationStatus String    @default("pending") // pending, generating, completed, error

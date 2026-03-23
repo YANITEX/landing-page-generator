@@ -5,33 +5,28 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      productId, 
       personaId, 
-      palette, 
+      palette,
+      language = 'EN',
+      country,
       sections 
     } = body;
 
-    // Fetch product to fill required fields if not provided
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    // Vérifier que le persona existe
+    const persona = await prisma.persona.findUnique({
+      where: { id: personaId },
+      include: { product: { include: { images: true } } }
     });
 
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    if (!persona) {
+      return NextResponse.json({ error: 'Persona not found' }, { status: 404 });
     }
 
     const landingPage = await prisma.landingPage.create({
       data: {
-        productId,
         personaId,
-        headline: product.headline || product.name, // Default headline
-        price: product.priceNew || 0,
-        currency: product.currency,
-        ctaText: product.ctaText,
-        primaryColor: palette.primary,
-        secondaryColor: palette.secondary,
-        accentColor: palette.accent,
-        backgroundColor: palette.background,
+        // On ne sauvegarde que le personaId et les sections
+        // Les autres valeurs (palette, langue, prix) sont temporaires pour la génération
         sections: {
           create: sections.map((section: any, index: number) => ({
             type: section.type,
@@ -48,9 +43,13 @@ export async function POST(request: NextRequest) {
                 order: 'asc'
             }
         },
-        product: {
+        persona: {
           include: {
-            images: true
+            product: {
+              include: {
+                images: true
+              }
+            }
           }
         }
       }
@@ -67,8 +66,12 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify({
               sectionId: section.id,
-              prompt: section.prompt || `Créer une section ${section.type} pour la landing page "${landingPage.headline}"`,
-              productImageUrl: landingPage.product?.images?.[0]?.url || null
+              prompt: section.prompt || `Créer une section ${section.type} pour la landing page`,
+              productImageUrl: landingPage.persona?.product?.images?.[0]?.url || null,
+              // Passer les valeurs temporaires pour la génération
+              palette: palette,
+              language: language,
+              country: country
             })
           });
 
@@ -104,22 +107,22 @@ export async function GET() {
     
     const landingPages = await prisma.landingPage.findMany({
       include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            images: {
-              take: 1,
-              orderBy: {
-                order: 'asc',
-              },
-            },
-          },
-        },
         persona: {
           select: {
             id: true,
             name: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                images: {
+                  take: 1,
+                  orderBy: {
+                    order: 'asc',
+                  },
+                },
+              },
+            },
           }
         },
         sections: {

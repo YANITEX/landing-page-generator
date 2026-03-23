@@ -51,14 +51,27 @@ export default function LandingPagesList() {
     fetch('/api/landing-pages')
       .then(async (res) => {
         if (!res.ok) {
-          // Essayer de lire le message d'erreur de l'API
-          try {
-            const errorData = await res.json();
-            console.error('API Error Response:', errorData);
-            throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.error || 'Unknown error'}`);
-          } catch (jsonError) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
+                    const contentType = res.headers.get('content-type') || '';
+                    let errorMessage = `HTTP error! status: ${res.status}`;
+
+                    if (contentType.includes('application/json')) {
+                        const errorData = await res.json();
+                        console.error('API Error Response:', errorData);
+                        if (errorData?.error) {
+                            errorMessage = `HTTP error! status: ${res.status}, message: ${errorData.error}`;
+                        }
+                        if (errorData?.details) {
+                            errorMessage += `, details: ${errorData.details}`;
+                        }
+                    } else {
+                        const errorText = await res.text();
+                        console.error('API Error Text Response:', errorText);
+                        if (errorText) {
+                            errorMessage = `HTTP error! status: ${res.status}, message: ${errorText}`;
+                        }
+                    }
+
+                    throw new Error(errorMessage);
         }
         const data = await res.json();
         console.log('API Response:', data);

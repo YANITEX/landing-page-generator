@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generateSectionImage } from '@/lib/ai-client';
 
 // PUT - Mettre à jour une section
 export async function PUT(
@@ -68,31 +67,29 @@ export async function POST(
     const { action } = await request.json();
 
     if (action === 'regenerate') {
-      // Récupérer la landing page et la section
-      const landingPage = await prisma.landingPage.findUnique({
-        where: { id: params.id },
+      // Récupérer la section et la landing page
+      const section = await prisma.section.findUnique({
+        where: { id: params.sectionId },
         include: {
-          product: {
+          landingPage: {
             include: {
-              images: true
+              persona: {
+                include: {
+                  product: {
+                    include: {
+                      images: true
+                    }
+                  }
+                }
+              }
             }
-          },
-          persona: true,
-          sections: true
+          }
         }
       });
 
-      if (!landingPage) {
+      if (!section || !section.landingPage) {
         return NextResponse.json(
-          { error: 'Landing page non trouvée' },
-          { status: 404 }
-        );
-      }
-
-      const section = landingPage.sections.find(s => s.id === params.sectionId);
-      if (!section) {
-        return NextResponse.json(
-          { error: 'Section non trouvée' },
+          { error: 'Section ou landing page non trouvée' },
           { status: 404 }
         );
       }
@@ -107,31 +104,26 @@ export async function POST(
         }
       });
 
-      // Lancer la génération en arrière-plan
-      generateSectionImage(params.sectionId, section.type, landingPage)
-        .then(async (imageUrl) => {
-          if (imageUrl) {
-            await prisma.section.update({
-              where: { id: params.sectionId },
-              data: { 
-                images: JSON.stringify([imageUrl]),
-                generationStatus: 'completed'
-              }
-            });
-          } else {
-            await prisma.section.update({
-              where: { id: params.sectionId },
-              data: { generationStatus: 'error' }
-            });
-          }
+      // Lancer la génération en arrière-plan via l'API
+      const productImageUrl = section.landingPage.persona?.product?.images?.[0]?.url || null;
+      
+      fetch(`${request.nextUrl.origin}/api/ai/generate-section-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sectionId: params.sectionId,
+          prompt: section.prompt || `Créer une section ${section.type}`,
+          productImageUrl: productImageUrl,
+          // Utiliser des valeurs par défaut pour la régénération
+          palette: { primary: 'auto', secondary: 'auto', accent: 'auto', background: 'auto' },
+          language: 'EN',
+          country: undefined
         })
-        .catch(async (error) => {
-          console.error('Error generating section image:', error);
-          await prisma.section.update({
-            where: { id: params.sectionId },
-            data: { generationStatus: 'error' }
-          });
-        });
+      }).catch(error => {
+        console.error('Error triggering regeneration:', error);
+      });
 
       return NextResponse.json({ success: true, message: 'Régénération lancée' });
     }
