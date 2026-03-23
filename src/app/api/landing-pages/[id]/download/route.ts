@@ -157,7 +157,7 @@ export async function GET(
 
     const fileName = `landing-page-${id}-complete.png`;
     
-    return new NextResponse(finalImageBuffer, {
+    return new NextResponse(new Uint8Array(finalImageBuffer), {
       headers: {
         'Content-Type': 'image/png',
         'Content-Disposition': `attachment; filename="${fileName}"`,

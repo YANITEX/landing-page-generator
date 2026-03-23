@@ -65,7 +65,7 @@ export async function GET(
     const productName = section.landingPage.persona?.product?.name || 'landing-page';
     const fileName = `${sanitizeFileName(productName)}-${getSectionTypeName(section.type)}.${getImageExtension(imageUrl)}`;
 
-    return new NextResponse(imageData, {
+    return new NextResponse(new Uint8Array(imageData), {
       headers: {
         'Content-Type': getImageMimeType(imageUrl),
         'Content-Disposition': `attachment; filename="${fileName}"`,
