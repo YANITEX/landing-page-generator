@@ -13,6 +13,7 @@ interface UploadedImage {
 interface FormData {
   images: UploadedImage[];
   productName: string;
+  headline: string;
   description: string;
   phone: string;
   whatsapp: string;
@@ -43,6 +44,7 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState<FormData>({
     images: [],
     productName: '',
+    headline: '',
     description: '',
     phone: '',
     whatsapp: '',
@@ -81,6 +83,7 @@ export default function EditProductPage() {
         setFormData(prev => ({
           ...prev,
           productName: product.name,
+          headline: product.headline || '',
           description: product.description || '',
           phone: product.phone || '',
           whatsapp: product.whatsapp || '',
@@ -299,6 +302,7 @@ export default function EditProductPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.productName,
+          headline: formData.headline,
           description: formData.description,
           currency: formData.currency,
           priceOld: formData.priceOld,

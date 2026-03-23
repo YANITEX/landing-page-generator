@@ -87,10 +87,15 @@ export async function PUT(
     const body = await request.json();
     const {
       name,
+      headline,
       description,
       phone,
       whatsapp,
       deliveryInfo,
+      currency,
+      priceOld,
+      priceNew,
+      ctaText,
       adCopies,
       images,
     } = body;
@@ -119,6 +124,26 @@ export async function PUT(
 
     if (description !== undefined) {
       updateData.description = description ? description.trim() : '';
+    }
+
+    if (headline !== undefined) {
+      updateData.headline = headline ? headline.trim() : '';
+    }
+
+    if (currency !== undefined) {
+      updateData.currency = currency ? currency.trim() : 'DA';
+    }
+
+    if (priceOld !== undefined) {
+      updateData.priceOld = priceOld !== null ? parseFloat(priceOld) : null;
+    }
+
+    if (priceNew !== undefined) {
+      updateData.priceNew = priceNew !== null ? parseFloat(priceNew) : null;
+    }
+
+    if (ctaText !== undefined) {
+      updateData.ctaText = ctaText ? ctaText.trim() : 'Commander maintenant';
     }
 
     if (phone !== undefined) {

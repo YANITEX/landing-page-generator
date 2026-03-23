@@ -32,9 +32,14 @@ export async function POST(request: NextRequest) {
     console.log('POST /api/products - Body:', JSON.stringify(body).slice(0, 200));
 
     const { 
-      name, 
+      name,
+      headline,
       description, 
       images,
+      currency,
+      priceOld,
+      priceNew,
+      ctaText,
       phone,
       whatsapp,
       deliveryInfo,
@@ -69,7 +74,12 @@ export async function POST(request: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name: name.trim(),
+        headline: headline ? headline.trim() : '',
         description: description ? description.trim() : '',
+        currency: currency || 'DA',
+        priceOld: priceOld !== undefined ? parseFloat(priceOld) : null,
+        priceNew: priceNew !== undefined ? parseFloat(priceNew) : null,
+        ctaText: ctaText || 'Commander maintenant',
         phone: phone || null,
         whatsapp: whatsapp || null,
         deliveryInfo: deliveryInfo || null,

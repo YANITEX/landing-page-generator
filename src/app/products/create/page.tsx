@@ -326,6 +326,7 @@ export default function CreateProductPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.productName,
+          headline: formData.headline,
           description: formData.description,
           images: imageUrls,
           currency: formData.currency,
