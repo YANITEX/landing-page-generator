@@ -59,7 +59,7 @@ const DEFAULT_SECTIONS: Record<SectionType, string> = {
   cta: "Eye-catching promotional image of this product with bold call-to-action energy, product elevated on podium or spotlight, celebratory atmosphere, premium presentation, clean background with subtle geometric shapes, irresistible commercial appeal"
 };
 
-export default function CreateLandingPage() {
+function CreateLandingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
@@ -997,6 +997,21 @@ export default function CreateLandingPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function CreateLandingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0a1520] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <CreateLandingPageContent />
+    </Suspense>
   );
 }
 
