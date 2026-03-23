@@ -13,7 +13,14 @@ datasource db {
 model Product {
   id          String   @id @default(cuid())
   name        String
+  headline    String?
   description String?  @db.Text
+  
+  // Pricing & CTA
+  currency    String   @default("DA")
+  priceOld    Float?
+  priceNew    Float?
+  ctaText     String   @default("Commander maintenant")
   
   // Contact & Livraison
   phone        String?
