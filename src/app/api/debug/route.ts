@@ -27,9 +27,14 @@ export async function GET() {
       throw new Error("No response from Gemini API");
     }
 
+    const candidate = response.candidates[0];
+    if (!candidate || !candidate.content || !candidate.content.parts) {
+      throw new Error("Invalid response structure from Gemini API");
+    }
+
     // Check if we got an image back
     let hasImage = false;
-    for (const part of response.candidates[0].content.parts) {
+    for (const part of candidate.content.parts) {
       if (part.inlineData) {
         hasImage = true;
         break;
