@@ -217,10 +217,10 @@ export async function PUT(
               include: {
                 adCopies: true
               }
-            }
+            },
+            landingPages: { select: { id: true } }
           }
-        },
-        landingPages: { select: { id: true } },
+        }
       },
     });
 
