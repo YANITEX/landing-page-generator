@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -998,3 +999,5 @@ export default function CreateLandingPage() {
     </div>
   );
 }
+
+export const dynamic = 'force-dynamic';
