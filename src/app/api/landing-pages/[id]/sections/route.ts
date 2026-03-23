@@ -35,7 +35,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { type, title, content, order } = body;
+    const { type, prompt, order } = body;
 
     // Obtenir le prochain ordre si pas spécifié
     let sectionOrder = order;
@@ -50,9 +50,8 @@ export async function POST(
     const section = await prisma.section.create({
       data: {
         type,
-        title,
-        content,
-        images: JSON.stringify([]), // Stocker images comme JSON string pour SQLite
+        prompt,
+        images: JSON.stringify([]),
         order: sectionOrder,
         landingPageId: id,
         generationStatus: 'pending'

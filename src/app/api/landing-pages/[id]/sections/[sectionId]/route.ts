@@ -9,7 +9,7 @@ export async function PUT(
   try {
     const { id, sectionId } = await params;
     const body = await request.json();
-    const { type, title, content, order, isActive } = body;
+    const { type, prompt, order, isActive } = body;
 
     const section = await prisma.section.update({
       where: {
@@ -18,8 +18,7 @@ export async function PUT(
       },
       data: {
         ...(type !== undefined && { type }),
-        ...(title !== undefined && { title }),
-        ...(content !== undefined && { content }),
+        ...(prompt !== undefined && { prompt }),
         ...(order !== undefined && { order }),
         ...(isActive !== undefined && { isActive }),
         updatedAt: new Date()
