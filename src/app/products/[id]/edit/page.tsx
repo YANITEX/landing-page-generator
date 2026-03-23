@@ -17,6 +17,10 @@ interface FormData {
   phone: string;
   whatsapp: string;
   deliveryInfo: string;
+  currency: string;
+  priceOld: number | null;
+  priceNew: number | null;
+  ctaText: string;
   adCopies: string[]; // Keep for legacy compatibility
   personas?: any[]; // New structured data
   language?: string;
@@ -43,6 +47,10 @@ export default function EditProductPage() {
     phone: '',
     whatsapp: '',
     deliveryInfo: '',
+    currency: 'DA',
+    priceOld: null,
+    priceNew: null,
+    ctaText: 'Commander maintenant',
     adCopies: [],
     language: 'EN',
   });
@@ -77,6 +85,10 @@ export default function EditProductPage() {
           phone: product.phone || '',
           whatsapp: product.whatsapp || '',
           deliveryInfo: product.deliveryInfo || '',
+          currency: product.currency || 'DA',
+          priceOld: product.priceOld || null,
+          priceNew: product.priceNew || null,
+          ctaText: product.ctaText || 'Commander maintenant',
           adCopies: (product.adCopies && Array.isArray(product.adCopies)) ? product.adCopies : [],
           personas: (product.personas && Array.isArray(product.personas)) ? product.personas : [],
           images: existingImages,
